@@ -189,19 +189,15 @@ def schedule_settings(request):
 	else:
 		requirement_datetimes_blank_lines = 3
 
-	RequirementDayTimeFormSet = forms.modelformset_factory(
-															RequirementDayTime,
-															form = RequirementDayTimeForm,
-															extra = requirement_daytimes_blank_lines,
-															can_delete = True,
-															)
-
-	RequirementDateTimeFormSet = forms.modelformset_factory(
-															RequirementDateTime,
-															form = RequirementDateTimeForm,
-															extra = requirement_datetimes_blank_lines,
-															can_delete = True,
-															)
+	RequirementDayTimeFormSet = make_RequirementDayTimeForm(
+																	request.user,
+																	requirement_daytimes_blank_lines,
+																	)
+		
+	RequirementDateTimeFormSet = make_RequirementDateTimeForm(
+																	request.user,
+																	requirement_datetimes_blank_lines,
+																	)
 
 	if request.method == 'POST':
 
@@ -381,12 +377,10 @@ def edit_employee(request,employee_id):
 																	can_delete = True,
 																	)
 
-	EmployeeEmployeeTypeFormSet = forms.modelformset_factory(
-																PersonEmployeeType,
-																form = EmployeeEmployeeTypeForm,
-																extra = 1,
-																can_delete = True,
-																)
+	EmployeeEmployeeTypeFormSet = make_EmployeeEmployeeTypeForm(
+																	request.user,
+																	1,
+																	)
 
 	if request.method == 'POST':
 

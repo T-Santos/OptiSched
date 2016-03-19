@@ -181,33 +181,46 @@ class EmployeeRequestDateTimeForm(forms.ModelForm):
 						'rqst_date_start_time',
 						'rqst_date_end_time',
 					]
+def make_EmployeeEmployeeTypeForm(
+									user,
+									extra,
+									):
+	class EmployeeEmployeeTypeForm(forms.ModelForm):
 
-class EmployeeEmployeeTypeForm(forms.ModelForm):
+		helper = FormHelper()
+		helper.form_tag = False
+		#helper.form_show_labels = False
+		helper.layout = Layout(
+								Div(
+									Field(
+											'pet_employee_type',
+											),
+									css_class = 'col-lg-10'
+									), 
+								Div(
+									'DELETE',
+									css_class = 'col-lg-2',
+									),
+								)
 
-	helper = FormHelper()
-	helper.form_tag = False
-	#helper.form_show_labels = False
-	helper.layout = Layout(
-							Div(
-								Field(
-										'pet_employee_type',
-										),
-								css_class = 'col-lg-10'
-								), 
-							Div(
-								'DELETE',
-								css_class = 'col-lg-2',
-								),
-							)
+		def __init__(self,*args, **kwargs):
+			super(EmployeeEmployeeTypeForm, self).__init__(*args, **kwargs)
+			self.fields['pet_employee_type'].label = False
+			self.fields['pet_employee_type'].queryset = EmployeeType.objects.filter(
+																						employee_type_user = user,
+																						)
 
-	def __init__(self, *args, **kwargs):
-		super(EmployeeEmployeeTypeForm, self).__init__(*args, **kwargs)
-		self.fields['pet_employee_type'].label = False
+		class Meta:
+				model = PersonEmployeeType
+				# if i do __all__ here it barks when i go to save saying its not valid look into clean_data
+				fields = ['pet_employee_type',]
 
-	class Meta:
-			model = PersonEmployeeType
-			# if i do __all__ here it barks when i go to save saying its not valid look into clean_data
-			fields = ['pet_employee_type',]
+	return forms.modelformset_factory(
+										PersonEmployeeType,
+										form = EmployeeEmployeeTypeForm,
+										extra = extra,
+										can_delete = True,
+																)
 
 class EmployeeTypesForm(forms.ModelForm):
 
@@ -236,103 +249,130 @@ class EmployeeTypesForm(forms.ModelForm):
 			model = EmployeeType
 			fields = ['et_type',]
 
-class RequirementDayTimeForm(forms.ModelForm):
+def make_RequirementDayTimeForm(
+								user,
+								extra,
+								):
+	class RequirementDayTimeForm(forms.ModelForm):
 
-	helper = FormHelper()
-	helper.form_tag = False
-	helper.layout = Layout(
-							Div(
-								Field(
-										'day_of_week',
-										),
-								css_class = 'col-lg-3',
-								),
-							Div(
-								Field(
-										'rqmt_day_start_time',
-										css_class = 'time',
-										),
-								css_class = 'col-lg-2',
-								),
-							Div(
-								Field(
-										'rqmt_day_employee_count',
-										),
-								css_class = 'col-lg-2',
-								), 
-							Div(
-								Field(
-										'rqmt_day_employee_type',
-										),
-								css_class = 'col-lg-3',
-								),
-							Div('DELETE', css_class = 'col-lg-2', style = 'padding-top: 20px'),
-							)
-	
-	class Meta:
-			model = RequirementDayTime
-			fields = [
-						'day_of_week',
-						'rqmt_day_start_time',
-						'rqmt_day_employee_type',
-						'rqmt_day_employee_count',
-					]
+		helper = FormHelper()
+		helper.form_tag = False
+		helper.layout = Layout(
+								Div(
+									Field(
+											'day_of_week',
+											),
+									css_class = 'col-lg-3',
+									),
+								Div(
+									Field(
+											'rqmt_day_start_time',
+											css_class = 'time',
+											),
+									css_class = 'col-lg-2',
+									),
+								Div(
+									Field(
+											'rqmt_day_employee_count',
+											),
+									css_class = 'col-lg-2',
+									), 
+								Div(
+									Field(
+											'rqmt_day_employee_type',
+											),
+									css_class = 'col-lg-3',
+									),
+								Div('DELETE', css_class = 'col-lg-2', style = 'padding-top: 20px'),
+								)
+		
+		class Meta:
+				model = RequirementDayTime
+				fields = [
+							'day_of_week',
+							'rqmt_day_start_time',
+							'rqmt_day_employee_type',
+							'rqmt_day_employee_count',
+						]
 
-	def __init__(self, *args, **kwargs):
-		super(RequirementDayTimeForm, self).__init__(*args, **kwargs)
-		self.fields['day_of_week'].label = 'Day of week'
-		self.fields['rqmt_day_start_time'].label = 'Effective'
-		self.fields['rqmt_day_employee_type'].label = 'Position'
-		self.fields['rqmt_day_employee_count'].label = 'Count'
+		def __init__(self, *args, **kwargs):
+			super(RequirementDayTimeForm, self).__init__(*args, **kwargs)
+			self.fields['day_of_week'].label = 'Day of week'
+			self.fields['rqmt_day_start_time'].label = 'Effective'
+			self.fields['rqmt_day_employee_type'].label = 'Position'
+			self.fields['rqmt_day_employee_type'].queryset = EmployeeType.objects.filter(
+																							employee_type_user = user,
+																							)
+			self.fields['rqmt_day_employee_count'].label = 'Count'
 
-class RequirementDateTimeForm(forms.ModelForm):
+	return forms.modelformset_factory(
+										RequirementDayTime,
+										form = RequirementDayTimeForm,
+										extra = extra,
+										can_delete = True,
+										)
+def make_RequirementDateTimeForm(
+								user,
+								extra,
+								):
+	class RequirementDateTimeForm(forms.ModelForm):
 
-	helper = FormHelper()
-	helper.form_tag = False
-	helper.layout = Layout(
-							Div(
-								Field(
-										'rqmt_date_date',
-										css_class = 'date',
-										),
-								css_class = 'col-lg-3',
-								),
-							Div(
-								Field(
-										'rqmt_date_time',
-										css_class = 'time',
-										),
-								css_class = 'col-lg-3',
-								),
-							Div(
-								Field(
-										'rqmt_date_employee_count',
-										),
-								css_class = 'col-lg-2',
-								), 
-							Div(
-								Field(
-										'rqmt_date_employee_type',
-										),
-								css_class = 'col-lg-2',
-								),
-							Div(
-								'DELETE',
-								css_class = 'col-lg-2',
-								style = 'padding-top: 20px',
-								),
-							)
-	
-	class Meta:
-			model = RequirementDateTime
-			fields = [
-						'rqmt_date_date',
-						'rqmt_date_time',
-						'rqmt_date_employee_count',
-						'rqmt_date_employee_type',
-					]
+		helper = FormHelper()
+		helper.form_tag = False
+		helper.layout = Layout(
+								Div(
+									Field(
+											'rqmt_date_date',
+											css_class = 'date',
+											),
+									css_class = 'col-lg-3',
+									),
+								Div(
+									Field(
+											'rqmt_date_time',
+											css_class = 'time',
+											),
+									css_class = 'col-lg-3',
+									),
+								Div(
+									Field(
+											'rqmt_date_employee_count',
+											),
+									css_class = 'col-lg-2',
+									), 
+								Div(
+									Field(
+											'rqmt_date_employee_type',
+											),
+									css_class = 'col-lg-2',
+									),
+								Div(
+									'DELETE',
+									css_class = 'col-lg-2',
+									style = 'padding-top: 20px',
+									),
+								)
+		
+		class Meta:
+				model = RequirementDateTime
+				fields = [
+							'rqmt_date_date',
+							'rqmt_date_time',
+							'rqmt_date_employee_count',
+							'rqmt_date_employee_type',
+						]
 
-	def __init__(self, *args, **kwargs):
-		super(RequirementDateTimeForm, self).__init__(*args, **kwargs)
-		self.fields['rqmt_date_employee_count'].label = 'Count'
-		self.fields['rqmt_date_employee_type'].label = 'Position'
+		def __init__(self,*args, **kwargs):
+			super(RequirementDateTimeForm, self).__init__(*args, **kwargs)
+			self.fields['rqmt_date_employee_count'].label = 'Count'
+			self.fields['rqmt_date_employee_type'].label = 'Position'
+			self.fields['rqmt_date_employee_type'].queryset = EmployeeType.objects.filter(
+																							employee_type_user = user,
+																							)
+
+	return forms.modelformset_factory(
+										RequirementDateTime,
+										form = RequirementDateTimeForm,
+										extra = extra,
+										can_delete = True,
+										)
