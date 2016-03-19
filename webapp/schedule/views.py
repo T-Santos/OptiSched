@@ -251,6 +251,7 @@ def schedule_settings(request):
 					and form.has_changed()):
 						obj = form.save(commit = False)
 						obj.requirement_date_time_user = request.user
+						obj.save()
 
 		return HttpResponseRedirect(reverse(template_redirect))
 
@@ -422,9 +423,9 @@ def edit_employee(request,employee_id):
 					and request_form not in employee_request_datetime_formset.deleted_forms
 					and request_form.has_changed()):
 						obj = request_form.save(commit = False)
-						obj.request_date_employee = employee
+						obj.rqst_date_employee = employee
 						obj.request_date_time_user = request.user
-						objsave()
+						obj.save()
 
 		# Request Day Times
 		if employee_request_daytime_formset.is_valid():
