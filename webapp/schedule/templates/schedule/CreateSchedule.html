@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+ <!-- needs to be below extends 
+{% load crispy_forms_tags %}-->
+ <!-- Browser tab's title -->
+{% block head_title %}Create Day | {{ block.super }} {% endblock %}
+
+{% block content %}
+
+{% include 'datetime_js.html' %}
+
+<div class="row">
+    <h2 style="border-bottom: 1px solid #BFBCBC;padding-bottom: 5px;">
+        Create Shifts for Date
+    </h2>
+</div>    
+
+<div class="row">
+    <div class='col-sm-6'>
+
+        {% if CreateDateForm.errors %}
+            {% for field in form %}
+                {% for error in CreateDateForm.errors %}
+                    <div class="text-danger">
+                        <strong>{{ error|escape }}</strong>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+            {% for error in CreateDateForm.non_field_errors %}
+                <div class="text-danger">
+                    <strong>{{ error|escape }}</strong>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+
+        <form name='CreateDateForm' action="{% url 'OptiSched:create_schedule' %}" method="POST">
+            {% csrf_token %}
+            <div class="form-group" >
+                <div class="input-group date" >
+                    <input type='text' placeholder="Date" class="form-control" name="{{ CreateDateForm.f_date.name }}" value="{{ CreateDateForm.f_date.value }}"/>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+                <p></p>
+                <div class="form-group">
+                    <div class='input-group time'>
+                        <input type='text' placeholder='Start Time' class="form-control" value="{{ CreateDateForm.f_start_time.value }}" name="{{ CreateDateForm.f_start_time.name }}">
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-time"></span>
+                        </span>
+                    </div>
+                    <p></p>
+                    <div class='input-group time'>
+                        <input type='text' placeholder='End Time' class="form-control" value="{{ CreateDateForm.f_end_time.value }}" name="{{ CreateDateForm.f_end_time.name }}">
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-time"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <input class="btn btn-success" type="submit" value="Create Workday">
+        </form>
+    </div>
+</div>
+
+{% endblock content %}

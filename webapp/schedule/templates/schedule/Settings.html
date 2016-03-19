@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+ <!-- needs to be below extends 
+{% load crispy_forms_tags %}-->
+
+ <!-- Browser tab's title -->
+{% block head_title %}Settings | {{ block.super }} {% endblock %}
+
+{% block content %}
+	<h2> Choose Settings to Edit </h2>
+
+	<div class="list-group">
+    <a href="{% url 'OptiSched:general_settings' %}" class="list-group-item">General Settings</a>
+    <a href="{% url 'OptiSched:schedule_settings' %}" class="list-group-item">Scheduling Settings</a>
+  </div>
+
+{% endblock %}

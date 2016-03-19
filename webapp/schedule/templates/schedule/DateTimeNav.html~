@@ -1,0 +1,10 @@
+{% block content %}
+
+ <!-- Main component for a primary marketing message or call to action -->
+      <div class="jumbotron">
+        <h1>OptiSched</h1>
+        <p>Sick of making a schedule every week?</p>
+        <p>Sick of having to worry about factoring in time-off, preferences?</p>
+        <p>If you've answered yes to any of these questions, look no further. Sign up today.</p>
+      </div>
+{% endblock %}

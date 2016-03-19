@@ -1,0 +1,134 @@
+<!--
+{% if shifts_per_date %}
+    <ul>
+    {% for shift in shifts_per_date %}
+        <li><a href="/Optisched/{{ Date }}/">{{ shift.display_details }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No shifts are available to display.</p>
+{% endif %}
+-->
+{% extends 'base_schedule.html' %}
+
+{% block head_title %}Week | {{ block.super }} {% endblock %}
+
+{% block content %}
+<style> 
+
+#employee_list{
+    border: 1px solid black;
+    background-color: #80A0EC;
+    border-radius: 3px;
+}
+
+#time_display{
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+#time_cell{
+     width: 30px;
+     text-align: center;
+     font-family: courier;
+     font-size: 8;
+}
+
+#employee_work_hours{
+    border: 1px solid black;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+#shift_text{
+    font-size: 10;
+}
+
+#employee_hour_working{
+    border: 1px solid black;
+    background-color: blue;
+    color: white;
+    font-size: 8;
+    height: 20px;
+    width: 30px;
+    text-align: center;
+    font-family: Courier;
+    font-weight: bold;
+}
+
+#employee_hour_not_working{
+    font-family: Courier;
+    border: 1px solid black;
+    background-color: lightgray;
+    height: 20px;
+    width: 30px;
+}
+
+
+</style>
+
+<p id=work_date>
+	{{ work_day_display }}
+</p>
+
+{% if shifts_per_date %}
+ 	<table width="100%" id=employee_list>
+	<!-- table header -->
+	<tr>
+		<td width=20%> Employee </td>
+		<td width=15%> Position </td>
+		<td width=20%> Shift </td>
+		
+	 	<td>
+			<table width=100% id=time_display>
+				<tr>
+					{% for hour in hours_in_day %}
+					<td id=time_cell> {{ hour }}:00 </td>
+					{% endfor %}
+				</tr>
+			</table>
+		</td>
+		
+	</tr>
+	<!-- end table header -->
+
+	<!-- table body -->
+	{% for shift in shifts_per_date %}
+		<tr>
+			<td width=20% id=shift_text > 
+				{{ shift.employee }}
+			</td>
+			<td width=15% id=shift_text > 
+				{{ shift.shift_employee_type }}
+			</td>
+			<td width=20% id=shift_text > 
+				{{ shift.start_time }} - {{ shift.end_time }} 
+			</td>
+			
+			<td> 
+				<table width="100%" id=employee_work_hours>
+					<tr>
+						{% for hour in hours_in_day %}
+							{% if hour in shift.hour_list %}
+								<td id=employee_hour_working></td>
+							{% else %}
+								<td id=employee_hour_not_working></td>
+							{% endif %}
+						{% endfor %}
+					</tr>
+				</table>
+			</td>
+			
+					
+		</tr>
+	{% endfor %}
+	<!-- end table body -->
+	</table>
+{% else %}
+	<p> No shifts are available </p>
+{% endif %}
+</div>
+</div>
+
+{% endblock %}
+

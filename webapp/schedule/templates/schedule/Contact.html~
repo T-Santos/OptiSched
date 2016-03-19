@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+ <!-- needs to be below extends 
+{% load crispy_forms_tags %}-->
+
+ <!-- Browser tab's title -->
+{% block head_title %}Contact | {{ block.super }} {% endblock %}
+
+{% block content %}
+
+<p> This page should have links to possibly email or call. Think eventually to do
+OptiSched at gmail dot com or something like that. </p>
+
+
+{% endblock %}

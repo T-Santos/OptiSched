@@ -1,0 +1,9 @@
+{% if latest_date_list %}
+    <ul>
+    {% for date in latest_date_list %}
+        <li><a href="/OptiSched/ViewDays/{{ date }}/">{{ date }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No dates are available.</p>
+{% endif %}

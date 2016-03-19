@@ -1,0 +1,74 @@
+{% block datetime_picker %}
+
+<div class="container">
+    <div class="row">
+        <div class='col-sm-6'>
+	   <form name="form" action="." method="POST">
+	    {% csrf_token %}
+            <div class="form-group" >
+                <div class="input-group date" >
+                    <input type='text' 
+			   class="form-control" 
+			   name="{{ NavDateForm.navdate.name }}" 
+			   value="{{ NavDateForm.navdate.value }}"
+			   id='datepicker'
+			   readonly="readonly"
+		    />
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" onclick="form.submit()"></span></span>
+		    <!--
+		    <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+		    -->
+                </div>
+            </div>
+	  </form>
+        </div>
+    <script type="text/javascript">
+        $(function() {              
+           $('#datepicker').datetimepicker({
+                 			format: 'YYYY-MM-DD',
+				        useStrict: true,
+					allowInputToggle: true,
+				    	ignoreReadonly: true,
+					}).find('input').addClass("form-control");
+        });      
+    </script>
+    </div>
+</div>
+
+{% endblock %}
+
+<!--
+{% block datetime_picker_old %}
+
+<div class="container">
+    <div class="row">
+        <div class='col-sm-6'>
+	   <form name="form" action="." method="POST">
+	    {% csrf_token %}
+            <div class="form-group" >
+                <div class='input-group date' id='datepicker'>
+                    <input type='text' class="form-control" 
+			   name="{{ NavDateForm.navdate.name }}" 
+			   value="{{ NavDateForm.navdate.value }}"
+			   onchange ='this.form.submit()' />
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar" onclick="form.submit()"></span>
+                    </span>
+                </div>
+		<input type="submit" value="Update" style="position: absolute; left: -999999px; width: 1px; height: 1px;" />
+            </div>
+	  </form>
+        </div>
+    <script type="text/javascript">
+        $(function() {              
+           $('#datepicker').datetimepicker({
+                 			format: 'YYYY-MM-DD'
+					});
+        });      
+    </script>
+    </div>
+</div>
+
+{% endblock %}
+
+-->

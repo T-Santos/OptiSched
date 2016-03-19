@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+ <!-- needs to be below extends -->
+
+ <!-- Browser tab's title -->
+{% block head_title %}Create Week | {{ block.super }} {% endblock %}
+
+{% block content %}
+
+{% include 'datetime_js.html' %}
+
+<div class="col-md-6">
+    <div class="row">
+        <div class='col-sm-6'>
+        	
+			{% if DateSpanForm.errors %}
+				{% for field in form %}
+					{% for error in DateSpanForm.errors %}
+						<div class="text-danger">
+						    <strong>{{ error|escape }}</strong>
+						</div>
+					{% endfor %}
+				{% endfor %}
+				{% for error in DateSpanForm.non_field_errors %}
+					<div class="text-danger">
+						<strong>{{ error|escape }}</strong>
+					</div>
+				{% endfor %}
+			{% endif %}
+
+        	<form name="DateSpanForm" action="{% url 'OptiSched:create_date_span' %}" method="POST">
+        	{% csrf_token %}
+	            <div class="form-group">
+	                <div class='input-group date'>
+	                    <input type='text' placeholder='From Date' class="form-control" value="{{ DateSpanForm.f_from_date.value }}" name="{{ DateSpanForm.f_from_date.name }}">
+	                    <span class="input-group-addon">
+	                        <span class="glyphicon glyphicon-calendar"></span>
+	                    </span>
+	                </div>
+	                <p></p>
+	                <div class='input-group date'>
+						<input type='text' placeholder='Thru Date' class="form-control" value="{{ DateSpanForm.f_thru_date.value }}" name="{{ DateSpanForm.f_thru_date.name }}">
+	                    <span class="input-group-addon">
+	                        <span class="glyphicon glyphicon-calendar"></span>
+	                    </span>
+	                </div>
+	            </div>
+	            <div class="form-group">
+	                <div class='input-group time'>
+	                    <input type='text' placeholder='Day Start Time' class="form-control" value="{{ DateSpanForm.f_start_time.value }}" name="{{ DateSpanForm.f_start_time.name }}">
+	                    <span class="input-group-addon">
+	                        <span class="glyphicon glyphicon-time"></span>
+	                    </span>
+	                </div>
+	                <p></p>
+	                <div class='input-group time'>
+						<input type='text' placeholder='Day End Time' class="form-control" value="{{ DateSpanForm.f_end_time.value }}" name="{{ DateSpanForm.f_end_time.name }}">
+	                    <span class="input-group-addon">
+	                        <span class="glyphicon glyphicon-time"></span>
+	                    </span>
+	                </div>
+	            </div>
+	    		<input class="btn btn-success" type="submit" value="Create Days">
+	        </form>
+        </div>
+    </div>
+
+{% endblock %}

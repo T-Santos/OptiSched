@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+ <!-- needs to be below extends 
+{% load crispy_forms_tags %}-->
+
+ <!-- Browser tab's title -->
+{% block head_title %}Employee List | {{ block.super }} {% endblock %}
+
+{% block content %}
+	<h2> Select an Employee to Edit </h2>
+
+	{% if EmployeeList %}
+		<div class="list-group">
+  			{% for employee in EmployeeList %}
+  				<a href="{{ employee.get_edit_url }}" class="list-group-item">{{employee.name_normal_id}}</a>
+  			{% endfor %}
+  		</div>
+  	{% else %}
+  		<p> No employees to display </p>
+  	{% endif %}
+
+{% endblock %}

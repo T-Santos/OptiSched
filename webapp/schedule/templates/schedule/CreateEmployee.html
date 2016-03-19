@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+ <!-- needs to be below extends -->
+{% load crispy_forms_tags %}
+
+ <!-- Browser tab's title -->
+{% block head_title %}Create Employee | {{ block.super }} {% endblock %}
+
+{% block content %}
+	<h2> Create Employee... </h2>
+	<form name="EmployeeInfoForm" action="{% url 'OptiSched:create_new_employee' %}" method="POST">
+		{% csrf_token %}
+    	{{ EmployeeInfoForm|crispy }}
+        <input name="SaveAndDash" class="btn btn-success" type="submit" value="Create Employee and Return to Dashboard">
+        <input name="SaveAndAnother" class="btn btn-success" type="submit" value="Create Employee and Add Another">
+	</form>
+
+{% endblock %}

@@ -1,0 +1,30 @@
+{% block date_picker_nav %}
+
+<div class="fluid">
+    <div class="row" style="border-bottom: 2px solid lightslategray;">
+        <div class='col-md-4 col-md-offset-4'>
+    	   <form class="form-inline" name="NavDateForm" action="." method="GET">
+                <div class="input-group navdate" >
+                    <input type='text' placeholder="Choose date to view" class="form-control" name="{{ NavDateForm.navdate.name }}" value="{{ NavDateForm.navdate.value }}"/>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+                <input class="btn btn-success" type="submit" value="Go">
+    	  </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(function() {              
+       $('.navdate').datetimepicker({
+            format: 'YYYY-MM-DD',
+            useStrict: true,
+            allowInputToggle: true,
+            ignoreReadonly: true,
+            });
+    });      
+</script>
+
+{% endblock %}

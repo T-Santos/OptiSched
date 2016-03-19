@@ -1,0 +1,149 @@
+{% extends 'base_schedule.html' %}
+
+{% block head_title %}Week | {{ block.super }} {% endblock %}
+
+{% block content %}
+<style>
+#days_in_week{
+   	 border: 1px solid black;
+    	 background-color: #80A0EC;
+   	 border-radius: 3px;
+	 table-layout: fixed;
+}
+
+#week_day{
+     	text-align: center;
+}
+
+#times{
+	font-family: courier;
+	height: 20px;
+	text-align: center;
+     	font-size: 8;
+}
+
+#employee_hour_working{
+	border: 1px solid black;
+	background-color: blue;
+	color: white;
+	font-size: 8;
+	height: 20px;
+	width: 30px;
+	text-align: center;
+	font-family: Courier;
+	font-weight: bold;
+}
+
+#employee_hour_not_working{
+	font-family: Courier;
+	border: 1px solid black;
+	background-color: lightgray;
+	height: 20px;
+	width: 30px;
+}
+</style>
+
+    <div class="row">
+        <div class='col-sm-12'>
+
+<p id=employee_display>
+	{{ employee_display }}
+</p>
+
+{% if days_in_week %}
+	{% if shifts_per_week %}
+		<table width=100% id=days_in_week>
+			<!-- Week header -->
+			<tr>
+				<!-- Time column -->
+				<td>
+					<p> Time </p>
+				</td>
+				<!-- End time column -->
+
+				<!-- Days columns -->
+				{% for day in days_in_week %}
+					<td id=week_day>
+					
+					{% if day == 0 %}
+						Monday
+					{% elif day == 1 %}
+						Tuesday
+					{% elif day == 2 %}
+						Wednesday
+					{% elif day == 3 %}
+						Thursday
+					{% elif day == 4 %}
+						Friday
+					{% elif day == 5 %}
+						Saturday
+					{% elif day == 6 %}
+						Sunday
+					{% else %}
+						Bug
+					{% endif %}
+					
+					</td>
+				{% endfor %}
+				<!-- end days columns -->
+			</tr>
+			<!--  End week header -->
+
+			<!-- Week Body -->
+			<tr>
+				<!-- Time column -->
+				<td>
+					<table width=100% >
+						{% for hour in hours_in_day %}
+							<tr id=table_row>
+								<td id=times>						
+									<p> {{ hour }}.00 </p>
+								</td>
+							</tr>
+						{% endfor %}
+					</table>
+				</td>
+				<!-- End time column -->
+
+				<!-- Days columns -->
+				{% for shift in shifts_per_week %}
+					<td>
+					
+					{% if shift == "NO_SHIFT" %}
+						<table width=100% id=hours_in_day>
+							{% for hour in hours_in_day %}
+								<tr id=table_row>
+									<td id=employee_hour_not_working></td>
+								</tr>
+							{% endfor %}
+						</table>
+					{% else %}
+						<table width="100%" id=hours_in_day>
+							{% for hour in hours_in_day %}
+								<tr id=table_row>
+								{% if hour >= shift.start_time.hour and hour < shift.end_time.hour %}
+									<td id=employee_hour_working> {{ shift.shift_employee_type }} </td>
+								{% else %}
+									<td id=employee_hour_not_working></td>
+								{% endif %}
+								</tr>
+							{% endfor %}
+						</table>
+					{% endif %}	
+
+					</td>
+				{% endfor %}
+				<!-- end days columns -->
+			</tr>
+
+		</table>
+	{% else %}
+		<p> No shifts to display </p>
+	{% endif %}
+{% else %}
+	<p> No days to display </p>
+{% endif %}
+</div>
+</div>
+{% endblock %}
+				

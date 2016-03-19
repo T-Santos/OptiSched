@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+ <!-- needs to be below extends 
+{% load crispy_forms_tags %}-->
+
+ <!-- Browser tab's title -->
+{% block head_title %}Schedule Settings | {{ block.super }} {% endblock %}
+
+{% block content %}
+
+{% include 'datetime_js.html' %}
+
+	<h2> Edit Schedule Settings </h2>
+
+	<form name="ScheduleSettings" action="." method="POST">
+		{% csrf_token %}
+
+		<div class="panel-body">
+
+			<div class="panel-group">
+				 <div class="panel panel-default">
+				    <div class="panel-heading">
+				      <h4 class="panel-title">
+				        <a data-toggle="collapse" href="#collapse1">Typical Workday Requirements</a>
+				      </h4>
+				    </div>
+				    <div id="collapse1" class="panel-collapse collapse">
+				      <div class="panel-body">
+ 						{% crispy RequirementDayTimeFormSet RequirementDayTimeFormSet.form.helper %}
+		    		  </div>
+				    </div>
+				 </div>
+			</div>
+
+			<div class="panel-group">
+				 <div class="panel panel-default">
+				    <div class="panel-heading">
+				      <h4 class="panel-title">
+				        <a data-toggle="collapse" href="#collapse2">Exception Workday Requirements</a>
+				      </h4>
+				    </div>
+				    <div id="collapse2" class="panel-collapse collapse">
+				      <div class="panel-body">
+ 						{% crispy RequirementDateTimeFormSet RequirementDateTimeFormSet.form.helper %}
+		    		  </div>
+				    </div>
+				 </div>
+			</div>
+
+		</div>
+
+        <input name="SaveEdits" class="btn btn-success" type="submit" value="Save Edits">
+
+	</form>
+
+{% endblock %}

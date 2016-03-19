@@ -1,0 +1,67 @@
+<!-- Fixed navbar -->
+{% url 'OptiSched:home' as home_url %}
+{% url 'OptiSched:about' as about_url %}
+{% url 'OptiSched:contact' as contact_url %}
+{% url 'OptiSched:dashboard' as dash_url %}
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="{{ home_url }}">OptiSched</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li {% if home_url in request.get_full_path or "/OptiSched/" == request.get_full_path %} class="active" {% endif %}><a href="{{ home_url }}">Home</a></li>
+            <li {% if about_url in request.get_full_path %} class="active" {% endif %}><a href="{{ about_url }}">About</a></li>
+            <li {% if contact_url in request.get_full_path %} class="active" {% endif %}><a href="{{ contact_url }}">Contact</a></li>
+            <li {% if dash_url in request.get_full_path %} class="active" {% endif %}><a href="{{ dash_url }}">Dashboard</a></li>
+            <!-- 
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Additional <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{{ about_url }}">About</a></li>
+                <li><a href="{{ contact_url }}">Contact</a></li>
+                <li><a href="{{ dash_url }}">Dashboard</a></li>
+                <li role="separator" class="divider"></li>
+                <li class="dropdown-header">Nav header</li>
+                <li><a href="#">Separated link</a></li>
+                <li><a href="#">One more separated link</a></li>
+              </ul>
+            -->
+            </li>
+	
+          </ul>
+
+	<!-- video 30 https://www.youtube.com/watch?v=511mhtI9ME4 -->
+	 <ul class="nav navbar-nav navbar-right">
+	 {% if request.user.is_authenticated %}
+		<li><a href="{% url 'auth_logout' %}">Logout</a></li>
+	 {% else %}
+		<li><a href="{% url 'registration_register' %}">Sign Up</a></li>
+	 {% endif %}
+	 </ul>
+
+	{% if not request.user.is_authenticated and not "/accounts/login/" in request.get_full_path %} 
+		<form class='navbar-form navbar-right' method='POST' action='{% url "auth_login" %}'>{% csrf_token %}
+		
+			<div class='form-group'>
+			  <input type='text' class='form-control' name='username' placeholder='Username' />
+			</div>
+
+			<div class='form-group'>
+			  <input type='password' class='form-control' name='password' placeholder='Password' />
+			</div>
+		
+			<button type='submit' class='btn btn-defaut'>Login</button>
+		</form>
+	{% endif %}
+
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>

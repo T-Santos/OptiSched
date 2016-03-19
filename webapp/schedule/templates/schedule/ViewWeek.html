@@ -1,0 +1,30 @@
+{% extends 'base_schedule.html' %}
+
+{% block head_title %}Week | {{ block.super }} {% endblock %}
+
+{% block content %}
+
+{% if employee_list %}
+
+
+    <div class="row">
+        <div class='col-sm-12'>
+    <ul>
+    {% for employee in employee_list %}
+        <li><a href="/OptiSched/ViewDays/ViewDay/{{ employee }}/">{{ employee }}</a></li>
+	<ul>
+	{% for shift in shifts_per_date %}
+		{% if shift.employee == employee %} 
+			<li><a href="/OptiSched/ViewDays/ViewDay/{{ shift }}/">{{ shift }}</a></li>
+		{% endif %}
+	{% endfor %}
+	</ul>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No dates are available.</p>
+{% endif %}
+</div>
+</div>
+
+{% endblock %}

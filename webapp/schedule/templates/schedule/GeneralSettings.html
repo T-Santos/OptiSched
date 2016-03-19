@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+ <!-- Browser tab's title -->
+{% block head_title %}General Settings | {{ block.super }} {% endblock %}
+
+{% block content %}
+	<h2> Edit General Settings </h2>
+
+  <form name="EmployeeTypeFormSet" action="." method="POST">
+    {% csrf_token %}
+
+
+    <div class="panel-body">
+
+      <div class="panel-group">
+          <h3> Employee Types </h3>
+        <div class='col-lg-6'>
+          {% crispy EmployeeTypeFormSet EmployeeTypeFormSet.form.helper %}
+        </div>
+        <div class='col-lg-6'></div>
+      </div>
+    </div>
+
+    <div class="panel-body">
+        <input name="SaveEdits" class="btn btn-success" type="submit" value="Save Edits">
+    </div>
+  </form>
+
+{% endblock %}

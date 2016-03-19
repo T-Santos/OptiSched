@@ -1,0 +1,75 @@
+
+<div class="panel-group" id="accordion" >
+    <div class="panel panel-default" >
+      <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapse1">
+        <h4 class="panel-title">Table Layout</h4>
+      </div>
+      <div id="collapse1" class="panel-collapse collapse in">
+        <div class="panel-body">
+		  <table class="table table-striped">
+		    <thead>
+		      <!-- TODO add a check box somewher to see if we want to suppress time
+		      		and check condition before displaying -->
+		      <tr>
+		        <th>Employee</th>
+		        <th>Position</th>
+		        <th>Shift</th>
+		      </tr>
+		    </thead>
+		    <tbody>
+		     {% for shift in shifts_per_date %}
+		      <!-- TODO add a check box somewher to see if we want to suppress time
+		      		and check condition before displaying -->
+		      <tr>
+		        <td>{{ shift.employee }}</td>
+		        <td>{{ shift.shift_employee_type }}</td>
+		        <td>{{ shift.start_time }} - {{ shift.end_time }}</td>
+		      </tr>
+		      <!-- TODO add a check box somewher to see if we want to suppress progress bars
+		      		and check condition before displaying -->
+		      <tr> 
+		      	<td colspan="3">
+		      	<div class="progress">
+			  		<div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" style="width:40%">
+			    		Not working
+			  		</div>
+			 		<div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" style="width:10%">
+			    		Working 
+			  		</div>
+			  		<div class="progress-bar progress-bar-danger progress-bar-striped" role="progressbar" style="width:20%">
+			    		Cant Work
+			  		</div>
+				</div>
+			</td>
+
+		      </tr>
+		     {% endfor %}
+		    </tbody>
+		  </table>
+        </div>
+      </div>
+    </div>
+
+     <div class="panel panel-default" >
+      <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapse2">
+        <h4 class="panel-title">Visual Layout</h4>
+      </div>
+      <div id="collapse2" class="panel-collapse collapse in">
+        <div class="panel-body">
+		  <div class="progress">
+			  <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" style="width:40%">
+			    Not working
+			  </div>
+			  <div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" style="width:10%">
+			    Working 
+			  </div>
+			  <div class="progress-bar progress-bar-danger progress-bar-striped" role="progressbar" style="width:20%">
+			    Cant Work
+			  </div>
+			</div>
+        </div>
+      </div>
+    </div> 
+    </div>
+  </div> 
+</div>

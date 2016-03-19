@@ -1,0 +1,6 @@
+<h1>Press the button.... I dare you</h1>
+
+<form action="{% url 'OptiSched:button' %}" method="post">
+{% csrf_token %}
+<input type="submit" value="Create Person" id="button" />
+</form>

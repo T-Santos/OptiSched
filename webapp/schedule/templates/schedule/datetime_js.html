@@ -1,0 +1,38 @@
+
+<script type="text/javascript">
+
+    $(function() {              
+                   $('.datetime').datetimepicker({
+                                                format: 'YYYY-MM-DD HH:mm',
+                                                useStrict: true,
+                                                allowInputToggle: true,
+                                                ignoreReadonly: true,
+                                                sideBySide: true,
+                                                timeZone: null
+                                                })
+                            .find('input')
+                            .addClass("form-control");
+                }); 
+
+    $(function() {              
+                   $('.date').datetimepicker({
+                                                format: 'YYYY-MM-DD',
+                                                useStrict: true,
+                                                allowInputToggle: true,
+                                                ignoreReadonly: true,
+                                                })
+                            .find('input')
+                            .addClass("form-control");
+                }); 
+
+    $(function() {              
+                   $('.time').datetimepicker({
+                                                format: 'HH:mm',
+                                                useStrict: true,
+                                                allowInputToggle: true,
+                                                ignoreReadonly: true,
+                                                })
+                            .find('input')
+                            .addClass("form-control");
+                });  
+</script>

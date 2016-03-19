@@ -1,0 +1,8 @@
+{% load staticfiles %}
+
+	
+  <script src="{% static 'datetimepicker/bower_components/jquery/dist/jquery.min.js' %}"></script>
+  <script src="{% static 'datetimepicker/bower_components/moment/min/moment.min.js' %}"></script>
+  <script src="{% static 'datetimepicker/node_modules/bootstrap/dist/js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'datetimepicker/build/js/bootstrap-datetimepicker.min.js' %}"></script>
+  <script src="{% static 'datetimepicker/node_modules/moment/min/moment.min.js' %}"></script>
