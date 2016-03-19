@@ -6,12 +6,13 @@ import datetime as dt
 from .models import EmployeeTypeShiftError
 import ScheduleDateTimeUtilities
 
-def ConvertErrorsToGroups(date):
+def ConvertErrorsToGroups(date,user):
 	'''
 		Get errors for date and group them by employee type
 	'''
 	errors = EmployeeTypeShiftError.objects.filter(
-													error_date = date
+													employee_type_shift_error_user = user,
+													error_date = date,
 													).order_by(
 																'error_emp_type',
 																'error_time'

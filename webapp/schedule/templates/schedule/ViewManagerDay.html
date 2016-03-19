@@ -67,8 +67,11 @@
 		        	<a href="{{ shift.get_employee_week_url }}">
 		        		<span class="glyphicon glyphicon-align-center"></span>
 		        	</a>
-		        	<span class="glyphicon glyphicon-user"></span>
-		        	<span class="glyphicon glyphicon-trash"></span>
+
+		        	<a href="{{ shift.employee.get_edit_url }}">
+		        		<span class="glyphicon glyphicon-user"></span>
+		        	</a>
+		        	<!-- <span class="glyphicon glyphicon-trash"></span> -->
 		       	<td>
 		      </tr>
 		      <!-- TODO add a check box somewher to see if we want to suppress progress bars

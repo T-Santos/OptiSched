@@ -14,7 +14,7 @@
 
 <div class="row">
     <h2 style="border-bottom: 1px solid #BFBCBC;padding-bottom: 5px;">
-        View Shifts for {{ employee.name_normal_id }} from {{ week_start_date }} to {{ week_end_date }}
+        View Shifts for {{ employee.name_normal_id }}  {{ week_start_date }} - {{ week_end_date }}
     </h2>
 </div> 
 
@@ -40,11 +40,9 @@
 		        <td>{{ shift.shift_employee_type }}</td>
 		        <td>{{ shift.start_time }} - {{ shift.end_time }}</td>
 		        <td>
-		        	<a href="{{ shift.get_employee_week_url }}">
-		        		<span class="glyphicon glyphicon-search"></span>
+		        	<a href="{{ shift.employee.get_edit_url }}">
+		        		<span class="glyphicon glyphicon-user"></span>
 		        	</a>
-		        	<span class="glyphicon glyphicon-user"></span>
-		        	<span class="glyphicon glyphicon-trash"></span>
 		       	<td>
 		      </tr>
 		      <!-- TODO add a check box somewher to see if we want to suppress progress bars

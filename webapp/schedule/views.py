@@ -53,19 +53,36 @@ def contact(request):
 def dashboard(request):
 	# TODO: Maybe pass if the user is an employee or manager to show them a different dash
 	#pdb.set_trace()
-	from_date = dt.date.today()+ dt.timedelta(days=3)
-	recently_created_days = Date.objects.filter(date__lte=from_date).order_by('-date')[:7]
-	recently_created_shifts = Shift.objects.filter(shift_date__lte=from_date).order_by('-shift_date')[:5]
+	from_date = dt.date.today() + dt.timedelta(days=3)
+	recently_created_days = Date.objects.filter(
+													date_user = request.user,
+													date__lte = from_date,
+													).order_by(
+																'-date'
+																)[:7]
+	recently_created_shifts = Shift.objects.filter(
+													shift_user = request.user,
+													shift_date__lte = from_date,
+													).order_by(
+																'-shift_date'
+																)[:5]
 
-	recently_viewed_shifts = Shift.objects.filter(shift_date__lte=from_date).order_by('-shift_date')[:5]
-	recently_viewed_employees = Person.objects.all()[:5]
+	recently_viewed_shifts = Shift.objects.filter(
+													shift_user = request.user,
+													shift_date__lte = from_date,
+													).order_by(
+																'-shift_date'
+																)[:5]
+	recently_viewed_employees = Person.objects.filter(
+														person_user = request.user,
+														)[:5]
 
 	context = {
 				'recently_created_days': recently_created_days,
 				'recently_created_shifts': recently_created_shifts,
 				'recently_viewed_shifts': recently_viewed_shifts,
 				'recently_viewed_employees': recently_viewed_employees,
-	}
+				}
 	template = "Dashboard.html"
 	return render(request,template,context)
 
@@ -89,7 +106,9 @@ def general_settings(request):
 	template_redirect = 'OptiSched:dashboard'
 	template = 'GeneralSettings.html'
 
-	existing_employee_types = EmployeeType.objects.all()
+	existing_employee_types = EmployeeType.objects.filter(
+															employee_type_user = request.user,
+															)
 
 	if existing_employee_types:
 		employee_type_blank_lines = 1
@@ -127,7 +146,9 @@ def general_settings(request):
 				if (form.is_valid() 
 					and form not in employee_type_formset.deleted_forms
 					and form.has_changed()):
-						form.save()
+						obj = form.save(commit=False)
+						obj.employee_type_user = request.user
+						obj.save()
 
 			return HttpResponseRedirect(reverse(template_redirect))
 
@@ -137,9 +158,10 @@ def general_settings(request):
 														prefix='employee_type',
 														queryset = existing_employee_types,
 														)
-		context = {
-					'EmployeeTypeFormSet': employee_type_formset,
+	context = {
+				'EmployeeTypeFormSet': employee_type_formset,
 				}
+
 	return render(request,template,context)
 
 @login_required
@@ -149,9 +171,13 @@ def schedule_settings(request):
 	template_redirect = 'OptiSched:dashboard'
 	template = 'ScheduleSettings.html'
 
-	existing_requirement_day_times = RequirementDayTime.objects.all()
+	existing_requirement_day_times = RequirementDayTime.objects.filter(
+																		requirement_day_time_user = request.user,
+																		)
 
-	existing_requirement_date_times = RequirementDateTime.objects.all()
+	existing_requirement_date_times = RequirementDateTime.objects.filter(
+																			requirement_date_time_user = request.user,
+																			)
 
 	if existing_requirement_day_times:
 		requirement_daytimes_blank_lines = 5
@@ -205,7 +231,9 @@ def schedule_settings(request):
 				if (form.is_valid() 
 					and form not in employee_requirement_daytime_formset.deleted_forms
 					and form.has_changed()):
-						form.save()
+						obj = form.save(commit = False)
+						obj.requirement_day_time_user = request.user
+						obj.save()
 
 		# Request Date times
 		if employee_requirement_datetime_formset.is_valid():
@@ -221,7 +249,8 @@ def schedule_settings(request):
 				if (form.is_valid() 
 					and form not in employee_requirement_datetime_formset.deleted_forms
 					and form.has_changed()):
-						form.save()
+						obj = form.save(commit = False)
+						obj.requirement_date_time_user = request.user
 
 		return HttpResponseRedirect(reverse(template_redirect))
 
@@ -257,10 +286,14 @@ def create_new_employee(request):
 		if employee_info_form.is_valid():
 
 			if 'SaveAndDash' in request.POST:
-				employee_info_form.save()
+				obj = employee_info_form.save(commit = False)
+				obj.person_user = request.user
+				obj.save()
 				return HttpResponseRedirect(reverse(template_redirect))
 			elif 'SaveAndAnother' in request.POST:
-				employee_info_form.save()
+				obj = employee_info_form.save(commit = False)
+				obj.person_user = request.user
+				obj.save()
 				return HttpResponseRedirect('')
 			else:
 				empoyee_info_form = EmployeeInfoForm()
@@ -287,7 +320,10 @@ def edit_employee(request,employee_id):
 
 	# Determine if we can access the page/employee we are trying to edit
 	try:
-		employee = Person.objects.get(pk = employee_id)
+		employee = Person.objects.get(
+										pk = employee_id,
+										person_user = request.user,
+										)
 	except Person.DoesNotExist:
 		raise Http404("Employee does not exist")
 	#employee = get_object_or_404(Person,employee_id)	
@@ -299,6 +335,7 @@ def edit_employee(request,employee_id):
 	employee_info_form = EmployeeInfoForm(instance = employee)
 
 	existing_request_daytimes = RequestDayTime.objects.filter(
+																request_day_time_user = request.user,
 																rqst_day_employee = employee,
 																).order_by(
 																			'day_of_week',
@@ -306,6 +343,7 @@ def edit_employee(request,employee_id):
 																			)
 
 	existing_request_datetimes = RequestDateTime.objects.filter(
+																request_date_time_user = request.user,
 																rqst_date_employee = employee,
 																).order_by(
 																			'rqst_date_date',
@@ -313,6 +351,7 @@ def edit_employee(request,employee_id):
 																			)
 
 	existing_employee_types = PersonEmployeeType.objects.filter(
+																person_employee_type_user = request.user,
 																pet_employee = employee,
 																)
 
@@ -382,9 +421,10 @@ def edit_employee(request,employee_id):
 				if (request_form.is_valid() 
 					and request_form not in employee_request_datetime_formset.deleted_forms
 					and request_form.has_changed()):
-
-						request_form.instance.rqst_date_employee = employee
-						request_form.save()
+						obj = request_form.save(commit = False)
+						obj.request_date_employee = employee
+						obj.request_date_time_user = request.user
+						objsave()
 
 		# Request Day Times
 		if employee_request_daytime_formset.is_valid():
@@ -400,9 +440,10 @@ def edit_employee(request,employee_id):
 				if (request_form.is_valid()
 					and request_form not in employee_request_daytime_formset.deleted_forms
 					and request_form.has_changed()):
-
-						request_form.instance.rqst_day_employee = employee
-						request_form.save()
+						obj = request_form.save(commit = False)
+						obj.rqst_day_employee = employee
+						obj.request_day_time_user = request.user
+						obj.save()
 
 		# Request Day Times
 		if employee_employeetype_formset.is_valid():
@@ -418,8 +459,10 @@ def edit_employee(request,employee_id):
 				if (form.is_valid()
 					and form not in employee_employeetype_formset.deleted_forms
 					and form.has_changed()):
-						form.instance.pet_employee = employee
-						form.save()
+						obj = form.save(commit = False)
+						obj.pet_employee = employee
+						obj.person_employee_type_user = request.user
+						obj.save()
 
 		return HttpResponseRedirect(reverse(template_redirect))
 	else:
@@ -451,7 +494,9 @@ def edit_employee(request,employee_id):
 def employee_list(request):
 
 	template = 'EmployeeList.html'
-	employee_list = Person.objects.all()
+	employee_list = Person.objects.filter(
+											person_user = request.user,
+											)
 	context = {
 				'EmployeeList':employee_list,
 				}
@@ -477,6 +522,7 @@ def create_schedule(request):
 			request.session['DATE_STR'] = new_date.isoformat()
 
 			a_workday = Workday.CreateDay(
+											user = request.user,
 											date = new_date,
 											date_start_time = start_time,
 											date_end_time = end_time,
@@ -525,6 +571,7 @@ def create_date_span(request):
 			for single_date in daterange(from_date,thru_date):
 
 				a_workday = Workday.CreateDay(
+												user = request.user,
 												date = single_date,
 												date_start_time = start_time,
 												date_end_time = end_time,
@@ -566,13 +613,28 @@ def ViewManagerDay(request):
 
 		if date:
 			try:
-				work_day = Date.objects.get(date=date)
-				shifts_per_date = Shift.objects.filter(shift_date=work_day)
+				work_day = Date.objects.get(
+											date_user = request.user,
+											date=date,
+											)
+				shifts_per_date = Shift.objects.filter(
+														shift_user = request.user,
+														shift_date=work_day,
+														)
 				shifts_per_date = sorted(shifts_per_date, key=operator.attrgetter('start_time'))
 
-				date_error_groups = ViewHelperFunctions.ConvertErrorsToGroups(work_day)
-				date_error_groups_compressed = ViewHelperFunctions.CompressErrorGroupsToStrings(work_day.date,date_error_groups,TIMESLICE)
-				date_error_strings = ViewHelperFunctions.ConvertCompressedErrorsToStrings(date_error_groups_compressed)
+				date_error_groups = ViewHelperFunctions.ConvertErrorsToGroups(
+																				work_day,
+																				request.user,
+																				)
+				date_error_groups_compressed = ViewHelperFunctions.CompressErrorGroupsToStrings(
+																									work_day.date,
+																									date_error_groups,
+																									TIMESLICE,
+																									)
+				date_error_strings = ViewHelperFunctions.ConvertCompressedErrorsToStrings(
+																							date_error_groups_compressed
+																							)
 				
 				context = {
 							'NavDateForm': form,
@@ -595,6 +657,9 @@ def ViewManagerDay(request):
 @login_required
 def ViewEmployeeWeek(request,employee_id,date):
 
+
+	template = 'ViewEmployeeWeek.html'
+
 	if request.method == 'POST':
 	
 		navform = NavDateForm(request.POST)
@@ -611,13 +676,20 @@ def ViewEmployeeWeek(request,employee_id,date):
 				return redirect('OptiSched:ViewEmployeeWeek',employee_id,date.isoformat())
 	else:
 		#pdb.set_trace()
-		work_day = Date.objects.get(date=date)
-		employee = Person.objects.get(pk=employee_id)
+		work_day = Date.objects.get(
+									date_user = request.user,
+									date=date,
+									)
+		employee = Person.objects.get(
+										pk=employee_id,
+										person_user = request.user,
+										)
 		start_end_week_dates = ScheduleDateTimeUtilities.get_dates_from_week(
 																				work_day.date.isocalendar()[0],
 																				work_day.date.isocalendar()[1]
 																			)
 		shifts_in_week = Shift.objects.filter(
+												shift_user = request.user,
 												shift_date__gte = start_end_week_dates[0],
 												shift_date__lte = start_end_week_dates[1],
 												employee = employee
@@ -625,7 +697,6 @@ def ViewEmployeeWeek(request,employee_id,date):
 		
 		navform = NavDateForm(initial={'navdate': date})
 
-		template = 'OptiSched/ViewEmployeeWeek.html'
 		context = {
 					'employee': employee,
 					'shifts': shifts_in_week,

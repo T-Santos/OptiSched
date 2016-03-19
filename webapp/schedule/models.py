@@ -8,10 +8,14 @@ from django.utils import timezone
 from django.core.urlresolvers import reverse
 from django.db.models import permalink
 
+from django.contrib.auth.models import User
+
 # Create Shift Error logging
 # Date and Error Code (internal / external)
 
 class Person(models.Model):
+
+	person_user = models.ForeignKey(User)
 	
 	first_name = models.CharField(
 									max_length=60,
@@ -62,6 +66,8 @@ class Person(models.Model):
 		return str(self.name())
 
 class PersonEmployeeType(models.Model):
+
+	person_employee_type_user = models.ForeignKey(User)
 	
 	# employee
 	pet_employee = models.ForeignKey(Person)
@@ -76,6 +82,8 @@ class PersonEmployeeType(models.Model):
 
 
 class Shift(models.Model):
+
+	shift_user = models.ForeignKey(User)
 
 	# date for shift
 	shift_date = models.ForeignKey('Date')
@@ -140,13 +148,16 @@ class Shift(models.Model):
 		return self.display_details()
 
 class Date(models.Model):
+
+	date_user = models.ForeignKey(User)
+
 	date = models.DateField(primary_key=True,
-			        default=datetime.date.today)
+			        		default=datetime.date.today)
 	# Schedule Params
 	day_start_time = models.TimeField("Day Start Time",
-				          default = datetime.time(8,0,0))
+				          				default = datetime.time(8,0,0))
 	day_end_time = models.TimeField("Day End Time",
-				        default = datetime.time(23,0,0))
+				       				 default = datetime.time(23,0,0))
 
 	def get_absolute_url(self):
 		#"http://localhost:8000/OptiSched/ViewManagerDay/?navdate=2016-02-14"
@@ -201,6 +212,8 @@ class Date(models.Model):
 
 class EmployeeTypeShiftError(models.Model):
 
+	employee_type_shift_error_user = models.ForeignKey(User)
+
 	# date for notification
 	error_date = models.ForeignKey('Date')
 
@@ -247,6 +260,8 @@ class RequestDayTime(models.Model):
 	        		(SKIP, 'Cannot Work'),
 	    			)
 
+	request_day_time_user = models.ForeignKey(User)
+
 	# employee key
 	rqst_day_employee = models.ForeignKey(Person)
 
@@ -278,6 +293,8 @@ class RequestDayTime(models.Model):
 
 class RequestDateTime(models.Model):
 	# There are going to be serveral of these if a vaca spans multiple days 
+
+	request_date_time_user = models.ForeignKey(User)
 	
 	# store request types
 	VACATION = 'VACA'
@@ -317,6 +334,8 @@ class RequestDateTime(models.Model):
 		return str(self.rqst_date_employee) + ' ' + self.displayRequestDateSpan() + ' ' + self.get_rqst_date_type_display()
 
 class EmployeeType(models.Model):
+
+	employee_type_user = models.ForeignKey(User)
 	
 	# employee type
 	et_type = models.CharField(
@@ -329,6 +348,8 @@ class EmployeeType(models.Model):
 		return str(self.et_type)
 
 class RequirementDateTime(models.Model):
+
+	requirement_date_time_user = models.ForeignKey(User)
 
 	rqmt_date_employee_type = models.ForeignKey(EmployeeType)
 
@@ -365,6 +386,8 @@ class RequirementDateTime(models.Model):
 		return str(self.rqmt_date_date.strftime("%Y-%m-%d")) + " " + str(self.rqmt_date_time.strftime("%H:%M")) + " " +  str(self.rqmt_date_employee_type) + " " +  str(self.rqmt_date_employee_count)
 
 class RequirementDayTime(models.Model):
+
+	requirement_day_time_user = models.ForeignKey(User)
 
 	days_of_week = (
 					(0,'Monday'),

@@ -20,6 +20,7 @@ class CreateDay(object):
     '''
     def __init__(
                 self,
+                user,
                 date,
                 date_start_time = datetime.time(0,0,0),
                 date_end_time = datetime.time(0,0,0),
@@ -47,6 +48,8 @@ class CreateDay(object):
         ''' 
         self.TIMESLICE = timeslice
 
+        self.user = user
+
         # Round start and end time to nearest TIMESLICE
         start_datetime = dt.datetime.combine(date,date_start_time)
         start_datetime_floor = ScheduleDateTimeUtilities.FloorDatetime(start_datetime,self.TIMESLICE)
@@ -58,6 +61,7 @@ class CreateDay(object):
 
         # TODO: we might want to see if a date object already exists before creating one
         self.date_model_obj =  Date(
+                                    date_user = self.user,
                                     date=date,
                                     day_start_time=date_start_time,
                                     day_end_time=date_end_time,
@@ -69,7 +73,9 @@ class CreateDay(object):
         self.time_slice = self.TIMESLICE
         self.time_slice_total = self.GetTimeSliceTotal()
 
-        self.employee_all = Person.objects.all()
+        self.employee_all = Person.objects.filter(
+                                                    person_user = self.user,
+                                                    )
 
         # these should all be private setters
         self.employees_already_working = self.GetAlreadyWorkingEmployees()
@@ -95,7 +101,10 @@ class CreateDay(object):
             shift.save()
 
         # Delete any old errors before saving the new ones
-        EmployeeTypeShiftError.objects.filter(error_date = self.date_model_obj).delete()
+        EmployeeTypeShiftError.objects.filter(
+                                                employee_type_shift_error_user = self.user,
+                                                error_date = self.date_model_obj
+                                                ).delete()
 
         for notification in self.employee_type_shift_errors:
             notification.save()
@@ -123,7 +132,10 @@ class CreateDay(object):
         '''
         shift_all = []
 
-        shifts = Shift.objects.filter(shift_date = self.date_model_obj)
+        shifts = Shift.objects.filter(
+                                        shift_user = self.user,
+                                        shift_date = self.date_model_obj,
+                                        )
         
         for shift in shifts:
             shift_all.append(shift)
@@ -189,6 +201,7 @@ class CreateDay(object):
                         # log error
                         for employee_type,type_count in employee_types_needed_for_timeslice:
                             date_notification = EmployeeTypeShiftError(
+                                                                        employee_type_shift_error_user = self.user,
                                                                         error_date = self.date_model_obj,
                                                                         error_time = time_slice_datetime.time(),
                                                                         error_emp_type = employee_type
@@ -198,10 +211,11 @@ class CreateDay(object):
                     else:
                         # create the shift object
                         shift_new = Shift(
-                                        shift_date = self.date_model_obj,
-                                        employee = employee_new.person,
-                                        shift_employee_type = employee_new.type
-                                        )
+                                            shift_user = self.user,
+                                            shift_date = self.date_model_obj,
+                                            employee = employee_new.person,
+                                            shift_employee_type = employee_new.type
+                                            )
             
                         shift_new.start_time = time_slice_datetime.time()
                         #shift_new.end_time = time_slice_datetime.time()
@@ -251,7 +265,10 @@ class CreateDay(object):
                 for temp_employee_type, temp_employee_requirement_count_list in employee_type_requirements.items():
                     employee_type_requirements_needed.append(
                                                                 [
-                                                                    EmployeeType.objects.get(pk=temp_employee_type),
+                                                                    EmployeeType.objects.get(
+                                                                                                employee_type_user = self.user,
+                                                                                                pk = temp_employee_type,
+                                                                                                ),
                                                                     temp_employee_requirement_count_list[0]
                                                                     ]
                                                                 )
@@ -267,7 +284,10 @@ class CreateDay(object):
                     if( active_type_counts.get(temp_employee_type,0) < temp_employee_requirement_count_list[0] ):
                         employee_type_requirements_needed.append(
                                                                     [
-                                                                        EmployeeType.objects.get(pk=temp_employee_type),
+                                                                        EmployeeType.objects.get(
+                                                                                                    employee_type_user = self.user,
+                                                                                                    pk = temp_employee_type,
+                                                                                                    ),
                                                                         temp_employee_requirement_count_list[0]
                                                                         ]
                                                                     )
@@ -291,6 +311,7 @@ class CreateDay(object):
         # given the current date and time see if there are any
         # override specific datetime requirements
         emp_req_ovrs = RequirementDateTime.objects.filter(
+                                                            requirement_date_time_user = self.user,
                                                             rqmt_date_date__gte = begin_of_day.date(),
                                                             rqmt_date_date__lte = now.date(),
                                                             rqmt_date_time__gte = begin_of_day.time(),
@@ -304,10 +325,11 @@ class CreateDay(object):
         # given day of the week and time
         if (not emp_req_ovrs):
             emp_reqs = RequirementDayTime.objects.filter(
-                                                        day_of_week = self.date_model_obj.date.weekday(),
-                                                        rqmt_day_start_time__lte = now
-                                                        ).order_by(
-                                                                    '-rqmt_day_start_time')
+                                                            requirement_day_time_user = self.user,
+                                                            day_of_week = self.date_model_obj.date.weekday(),
+                                                            rqmt_day_start_time__lte = now
+                                                            ).order_by(
+                                                                        '-rqmt_day_start_time')
 
         # Make a map/dictionary of employee type reqirements and types needed checking
         '''
@@ -371,7 +393,10 @@ class CreateDay(object):
         for available_employee in temp_available_employees:
             
             temp_person_employee_types = []     
-            temp_person_employee_types = PersonEmployeeType.objects.filter(pet_employee = available_employee)
+            temp_person_employee_types = PersonEmployeeType.objects.filter(
+                                                                            person_employee_type_user = self.user,
+                                                                            pet_employee = available_employee,
+                                                                            )
             
             temp_employee_types = [] 
             for temp_person_employee_type in temp_person_employee_types:
@@ -396,6 +421,7 @@ class CreateDay(object):
             week_dates = ScheduleDateTimeUtilities.get_dates_from_week(int(year_num),int(week_num))
 
             temp_emp_existing_shifts_in_week = Shift.objects.filter(
+                                                                    shift_user = self.user,
                                                                     shift_date__gte = week_dates[0],
                                                                     shift_date__lte = week_dates[1],
                                                                     employee = available_employee.id)
@@ -422,6 +448,7 @@ class CreateDay(object):
         # Get all DateTime requests that encompass the current time
         # and for only potential new employees
         qs_all_datetime_requests = RequestDateTime.objects.filter(
+                                                                    request_date_time_user = self.user,
                                                                     rqst_date_date = datetime.date(),
                                                                     rqst_date_start_time__lte = datetime.time(),
                                                                     rqst_date_end_time__gte = datetime.time()
@@ -431,6 +458,7 @@ class CreateDay(object):
         # Get all DayTime requests that encompass the current time
         # and for only potential new employees                                                                
         qs_all_daytime_requests = RequestDayTime.objects.filter(
+                                                                    request_day_time_user = self.user,
                                                                     day_of_week = self.date_model_obj.date.weekday(),
                                                                     rqst_day_start_time__lte = datetime.time(),
                                                                     rqst_day_end_time__gte = datetime.time()
@@ -525,7 +553,10 @@ class CreateDay(object):
             #return_val[0] = random.choice(available_employees)
             
             # get employee types for chosen employee
-            chosen_employee_types = PersonEmployeeType.objects.filter(pet_employee=return_val[0])
+            chosen_employee_types = PersonEmployeeType.objects.filter(
+                                                                        person_employee_type_user = self.user,
+                                                                        pet_employee = return_val[0],
+                                                                        )
             temp_chosen_employee_types = []
             for chosen_employee_type in chosen_employee_types:
                 temp_chosen_employee_types.append(chosen_employee_type.pet_employee_type)
@@ -559,11 +590,13 @@ class CreateDay(object):
 
         # check to see if there are any requests
         qs_any_datetime_requests = RequestDateTime.objects.filter(
+                                                                    request_date_time_user = self.user,
                                                                     rqst_date_employee = employee,
                                                                     rqst_date_date = date
                                                                     ).exclude(
                                                                                 rqst_date_type = 'PREF')
         qs_any_daytime_requests = RequestDayTime.objects.filter(
+                                                                request_day_time_user = self.user,
                                                                 rqst_day_employee = employee,
                                                                 day_of_week = date.weekday(),
                                                                 rqst_day_type = 'SKIP')
@@ -573,13 +606,15 @@ class CreateDay(object):
 
         # check to see if the current time is currently in a request's time slot
         qs_during_datetime_requests = RequestDateTime.objects.filter(
-                                                            rqst_date_employee = employee,
-                                                            rqst_date_date = date,
-                                                            rqst_date_start_time__lte = time,
-                                                            rqst_date_end_time__gt = time
-                                                            ).exclude(
-                                                                        rqst_date_type = 'PREF')
+                                                                        request_date_time_user = self.user,
+                                                                        rqst_date_employee = employee,
+                                                                        rqst_date_date = date,
+                                                                        rqst_date_start_time__lte = time,
+                                                                        rqst_date_end_time__gt = time
+                                                                        ).exclude(
+                                                                                    rqst_date_type = 'PREF')
         qs_during_daytime_requests = RequestDayTime.objects.filter(
+                                                                    request_day_time_user = self.user,
                                                                     rqst_day_employee = employee,
                                                                     day_of_week = date.weekday(),
                                                                     rqst_day_start_time__lte = time,
@@ -592,6 +627,7 @@ class CreateDay(object):
 
         # check to see if there are any future requests
         qs_future_datetime_request = RequestDateTime.objects.filter(
+                                                                    request_date_time_user = self.user,
                                                                     rqst_date_employee = employee,
                                                                     rqst_date_date = date,
                                                                     rqst_date_start_time__gte = time
@@ -600,6 +636,7 @@ class CreateDay(object):
                                                                                 ).order_by(
                                                                                             "-rqst_date__start_time").first()
         qs_future_daytime_request = RequestDayTime.objects.filter(
+                                                                    request_day_time_user = self.user,
                                                                     rqst_day_employee = employee,
                                                                     day_of_week = date.weekday(),
                                                                     rqst_day_start_time__gte = time,

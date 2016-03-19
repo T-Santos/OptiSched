@@ -100,7 +100,8 @@ class CreateDateSpanForm(forms.Form):
 class EmployeeInfoForm(forms.ModelForm):
 	class Meta:
 			model = Person
-			fields = '__all__'
+			#fields = '__all__'
+			exclude = ['person_user']
 
 class EmployeeRequestDayTimeForm(forms.ModelForm):
 
@@ -233,7 +234,7 @@ class EmployeeTypesForm(forms.ModelForm):
 
 	class Meta:
 			model = EmployeeType
-			fields = '__all__'
+			fields = ['et_type',]
 
 class RequirementDayTimeForm(forms.ModelForm):
 
