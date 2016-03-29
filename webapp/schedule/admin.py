@@ -25,6 +25,13 @@ class DateAdmin(admin.ModelAdmin):
 
     	inlines = [ShiftInline]
 
+class EmployeeTypeShiftErrorAdmin(admin.ModelAdmin):
+	model = EmployeeTypeShiftError
+
+	list_filter = ['error_date']
+
+	list_display = ['error_date','error_time','error_emp_type']
+
 admin.site.register(Shift,ShiftAdmin)
 admin.site.register(Date,DateAdmin)
 admin.site.register(Person,PersonAdmin)
@@ -38,4 +45,4 @@ admin.site.register(RequirementDateTime)
 admin.site.register(RequestDayTime)
 admin.site.register(RequestDateTime)
 
-admin.site.register(EmployeeTypeShiftError)
+admin.site.register(EmployeeTypeShiftError,EmployeeTypeShiftErrorAdmin)

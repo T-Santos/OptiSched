@@ -12,14 +12,14 @@ import datetime as dt
 import pdb
 
 
-class LogInForm(forms.Form):
+# class LogInForm(forms.Form):
 	
-	username = forms.EmailField()
-	password = forms.CharField()
-	other = forms.CharField()
-#	password = forms.CharField(widget=forms.PasswordInput())
-#	class Meta:
-#		model = User
+# 	username = forms.EmailField()
+# 	password = forms.CharField()
+# 	other = forms.CharField()
+# #	password = forms.CharField(widget=forms.PasswordInput())
+# #	class Meta:
+# #		model = User
 
 class NavDateForm(forms.Form):
 	# get the latest date in the database and increase it by 1 otherwise use today's date
@@ -93,8 +93,25 @@ class CreateDateSpanForm(forms.Form):
 			msg = "From Date must fall before Thru Date"
 			raise forms.ValidationError(msg)
 
-		if not start_time < end_time:
-			msg = "End Time must fall affter Start Time"
+		# Time Validation could be consolidated with create date time 
+		# validatior	
+		if start_time == datetime.time(0,0,0):
+			"Do nothing" 
+		elif not start_time:
+			msg = "Start Time is required"
+			raise forms.ValidationError(msg)
+
+		if end_time == datetime.time(0,0,0):
+			"Do Nothing"
+		elif not end_time:
+			msg = "End Time is required"
+			raise forms.ValidationError(msg)
+		
+		if (start_time == datetime.time(0,0,0)
+			and end_time == datetime.time(0,0,0)):
+			"Do nothing"
+		elif not start_time < end_time:
+			msg = "End Time must fall after Start Time"
 			raise forms.ValidationError(msg)
 
 class EmployeeInfoForm(forms.ModelForm):
@@ -109,29 +126,32 @@ class EmployeeRequestDayTimeForm(forms.ModelForm):
 	helper.form_tag = False
 	helper.layout = Layout(
 							Div(
-								Field(
-										'rqst_day_type'
-										),
-								css_class = 'col-lg-3'),
-							Div(
-								Field(
-										'day_of_week'
-										),
-								css_class = 'col-lg-3'),
-							Div(
-								Field(
-										'rqst_day_start_time',
-										css_class = 'time',
-										),
-								css_class = 'col-lg-2'),
-							Div(
-								Field(
-										'rqst_day_end_time',
-										css_class = 'time',
-										),
-								css_class = 'col-lg-2'), 
-							Div('DELETE', css_class = 'col-lg-2', style = 'padding-top: 20px'),
+								Div(
+									Field(
+											'rqst_day_type'
+											),
+									css_class = 'col-lg-3'),
+								Div(
+									Field(
+											'day_of_week'
+											),
+									css_class = 'col-lg-3'),
+								Div(
+									Field(
+											'rqst_day_start_time',
+											css_class = 'time',
+											),
+									css_class = 'col-lg-2'),
+								Div(
+									Field(
+											'rqst_day_end_time',
+											css_class = 'time',
+											),
+									css_class = 'col-lg-2'), 
+								Div('DELETE', css_class = 'col-lg-2', style = 'padding-top: 20px'),
+							css_class = "row"
 							)
+						)
 	
 	class Meta:
 			model = RequestDayTime
@@ -181,6 +201,7 @@ class EmployeeRequestDateTimeForm(forms.ModelForm):
 						'rqst_date_start_time',
 						'rqst_date_end_time',
 					]
+
 def make_EmployeeEmployeeTypeForm(
 									user,
 									extra,
@@ -311,6 +332,7 @@ def make_RequirementDayTimeForm(
 										extra = extra,
 										can_delete = True,
 										)
+
 def make_RequirementDateTimeForm(
 								user,
 								extra,

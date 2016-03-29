@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import timezone 
 
 from django.core.urlresolvers import reverse
+from django.core.exceptions import ValidationError
 from django.db.models import permalink
 
 from django.contrib.auth.models import User
@@ -15,7 +16,10 @@ from django.contrib.auth.models import User
 
 class Person(models.Model):
 
-	person_user = models.ForeignKey(User)
+	person_user = models.ForeignKey(
+									User,
+									verbose_name="User",
+									)
 	
 	first_name = models.CharField(
 									max_length=60,
@@ -27,25 +31,32 @@ class Person(models.Model):
 									)
 
 	# min max hours to work per week
-	person_min_hours_per_week = models.IntegerField(
-													default=25,
-													verbose_name='Min Hrs / Week',
-													)
+	person_min_hours_per_week = models.PositiveIntegerField(
+															default=25,
+															verbose_name='Min Hrs / Week',
+															)
 
-	person_max_hours_per_week = models.IntegerField(
-													default=40,
-													verbose_name='Max Hrs / Week',
-													)
+	person_max_hours_per_week = models.PositiveIntegerField(
+															default=40,
+															verbose_name='Max Hrs / Week',
+															)
 
 	# min max hours to work per shift
-	person_min_hours_per_shift = models.IntegerField(
-														default=4,
-														verbose_name='Min Hrs / Shift',
-														)
-	person_max_hours_per_shift = models.IntegerField(
-														default=8,
-														verbose_name='Max Hrs / Shift',
-														)
+	person_min_hours_per_shift = models.PositiveIntegerField(
+																default=4,
+																verbose_name='Min Hrs / Shift',
+																)
+	person_max_hours_per_shift = models.PositiveIntegerField(
+																default=8,
+																verbose_name='Max Hrs / Shift',
+																)
+	def clean(self):
+
+		if not (self.person_min_hours_per_shift <= self.person_max_hours_per_shift):
+			raise ValidationError("Min Hours larger than Max Hours (per shift)")
+
+		if not (self.person_min_hours_per_week <= self.person_max_hours_per_week):
+			raise ValidationError("Min Hours larger than Max Hours (per week)")
 
 	def name(self):
         	return ''.join([self.last_name,',', self.first_name])
@@ -67,13 +78,22 @@ class Person(models.Model):
 
 class PersonEmployeeType(models.Model):
 
-	person_employee_type_user = models.ForeignKey(User)
+	person_employee_type_user = models.ForeignKey(
+													User,
+													verbose_name="User",
+													)
 	
 	# employee
-	pet_employee = models.ForeignKey(Person)
+	pet_employee = models.ForeignKey(
+										Person,
+										verbose_name="Employee",
+										)
 
 	# employee type
-	pet_employee_type = models.ForeignKey('EmployeeType')
+	pet_employee_type = models.ForeignKey(
+											'EmployeeType',
+											verbose_name="Position",
+											)
 
 	# Members
 	
@@ -83,17 +103,29 @@ class PersonEmployeeType(models.Model):
 
 class Shift(models.Model):
 
-	shift_user = models.ForeignKey(User)
+	shift_user = models.ForeignKey(
+									User,
+									verbose_name="User",
+									)
 
 	# date for shift
-	shift_date = models.ForeignKey('Date')
+	shift_date = models.ForeignKey(
+									'Date',
+									verbose_name="Shift Date",
+									)
 	
 	# employee on shift	
-	employee = models.ForeignKey(Person)
+	employee = models.ForeignKey(
+									Person,
+									verbose_name="Employee",
+									)
 
 	# Employee Type for employee
 	# TODO: Limit choices to the employee's employee types?
-	shift_employee_type = models.ForeignKey('EmployeeType')
+	shift_employee_type = models.ForeignKey(
+												'EmployeeType',
+												verbose_name="Position",
+												)
 	start_time = models.TimeField("Start Time")
 	end_time = models.TimeField("End Time")
 
@@ -149,15 +181,26 @@ class Shift(models.Model):
 
 class Date(models.Model):
 
-	date_user = models.ForeignKey(User)
+	date_user = models.ForeignKey(
+									User,
+									verbose_name="User",
+									)
 
-	date = models.DateField(primary_key=True,
-			        		default=datetime.date.today)
+	date = models.DateField(
+							primary_key=True,
+			        		default=datetime.date.today,
+			        		verbose_name="Date",
+			        		)
 	# Schedule Params
-	day_start_time = models.TimeField("Day Start Time",
-				          				default = datetime.time(8,0,0))
-	day_end_time = models.TimeField("Day End Time",
-				       				 default = datetime.time(23,0,0))
+	day_start_time = models.TimeField(
+										"Day Start Time",
+				          				default = datetime.time(8,0,0),
+				          				)
+
+	day_end_time = models.TimeField(
+									"Day End Time",
+				       				 default = datetime.time(23,0,0),
+				       				 )
 
 	def get_absolute_url(self):
 		#"http://localhost:8000/OptiSched/ViewManagerDay/?navdate=2016-02-14"
@@ -212,12 +255,20 @@ class Date(models.Model):
 
 class EmployeeTypeShiftError(models.Model):
 
-	employee_type_shift_error_user = models.ForeignKey(User)
+	employee_type_shift_error_user = models.ForeignKey(
+														User,
+														verbose_name="User",
+														)
 
 	# date for notification
-	error_date = models.ForeignKey('Date')
+	error_date = models.ForeignKey(
+									'Date',
+									verbose_name="Date",
+									)
 
 	error_time = models.TimeField("Error Time")
+
+	# TODO Error End time...we're storing too many errors
 
 	# Employee Type if found an error having to do with employee types
 	error_emp_type = models.ForeignKey('EmployeeType')
@@ -260,27 +311,40 @@ class RequestDayTime(models.Model):
 	        		(SKIP, 'Cannot Work'),
 	    			)
 
-	request_day_time_user = models.ForeignKey(User)
+	request_day_time_user = models.ForeignKey(
+												User,
+												verbose_name="User",
+												)
 
 	# employee key
-	rqst_day_employee = models.ForeignKey(Person)
+	rqst_day_employee = models.ForeignKey(
+											Person,
+											verbose_name="Employee",
+											)
 
 	# Day of the week
-	day_of_week = models.IntegerField(choices = DAYS_OF_WEEK)
+	day_of_week = models.IntegerField(
+										choices = DAYS_OF_WEEK,
+										verbose_name="Day",
+										)
 
 	# Request
 	rqst_day_type = models.CharField(
     									max_length=4,
-    									choices=REQUEST_TYPES)
+    									choices=REQUEST_TYPES,
+    									verbose_name="Request Type",
+    									)
 
 	# Time the req should start
 	rqst_day_start_time = models.TimeField(
 											"Request Start Time",
-				          					default = datetime.time(0,0,0))
+				          					default = datetime.time(0,0,0),
+				          					)
 	# Time the req should stop
 	rqst_day_end_time = models.TimeField(
 											"Request End Time",
-				          					default = datetime.time(23,59,0))
+				          					default = datetime.time(23,59,0),
+				          					)
 
 	class Meta:
 		# index_together? https://docs.djangoproject.com/en/1.9/ref/models/options/#index-together
@@ -294,7 +358,10 @@ class RequestDayTime(models.Model):
 class RequestDateTime(models.Model):
 	# There are going to be serveral of these if a vaca spans multiple days 
 
-	request_date_time_user = models.ForeignKey(User)
+	request_date_time_user = models.ForeignKey(
+												User,
+												verbose_name="User",
+												)
 	
 	# store request types
 	VACATION = 'VACA'
@@ -304,16 +371,25 @@ class RequestDateTime(models.Model):
 
 	# date key
 	# TODO: maybe need to make this required somehow
-	rqst_date_date = models.DateField()
+	rqst_date_date = models.DateField(
+										verbose_name="Request Date",
+										)
 
 	# employee key
-	rqst_date_employee = models.ForeignKey(Person)
+	rqst_date_employee = models.ForeignKey(
+											Person,
+											verbose_name="Request Employee",
+											)
 
 	# start and end times
-	rqst_date_start_time = models.TimeField("Request Start Time",
-				              default = datetime.time(0,0,0))
-	rqst_date_end_time = models.TimeField("Request End Time",
-				            default = datetime.time(23,59,0))
+	rqst_date_start_time = models.TimeField(
+											"Request Start Time",
+				              				default = datetime.time(0,0,0),
+				              				)
+	rqst_date_end_time = models.TimeField(
+											"Request End Time",
+				            				default = datetime.time(23,59,0),
+				            				)
 	
 	REQUEST_TYPES = (
         		  		(VACATION, 'Vacation'),
@@ -324,7 +400,9 @@ class RequestDateTime(models.Model):
 	
 	rqst_date_type = models.CharField(
     									max_length=4,
-    									choices=REQUEST_TYPES)
+    									choices=REQUEST_TYPES,
+    									verbose_name="Request Type",
+    									)
 
 	# Members
 	def displayRequestDateSpan(self):
@@ -335,13 +413,24 @@ class RequestDateTime(models.Model):
 
 class EmployeeType(models.Model):
 
-	employee_type_user = models.ForeignKey(User)
+	employee_type_user = models.ForeignKey(
+											User,
+											verbose_name="User",
+											)
 	
 	# employee type
 	et_type = models.CharField(
-								primary_key=True,
 								max_length=60,
+								verbose_name="Position",
 								)
+
+	class Meta:
+		unique_together = (
+							(
+								"employee_type_user",
+								"et_type",
+								),
+							)
 
 	# Members
 	def __str__(self):
@@ -349,26 +438,29 @@ class EmployeeType(models.Model):
 
 class RequirementDateTime(models.Model):
 
-	requirement_date_time_user = models.ForeignKey(User)
+	requirement_date_time_user = models.ForeignKey(
+													User,
+													verbose_name="User",
+													)
 
-	rqmt_date_employee_type = models.ForeignKey(EmployeeType)
+	rqmt_date_employee_type = models.ForeignKey(
+													EmployeeType,
+													verbose_name="Position",
+													)
 
 	# Date
 	rqmt_date_date = models.DateField(
 										"Effective Date",
-										#default = datetime.datetime.today().strftime("%Y-%m-%d"),
 										)
 	
 	# Time
 	rqmt_date_time = models.TimeField(
 										"Effective Time",
-										#default = datetime.time(8,0,0),
 										)
 
 	# Requirement
 	rqmt_date_employee_count = models.PositiveIntegerField(
 															"Count",
-															#default = 0,
 															)
 
 	class Meta:
@@ -387,7 +479,10 @@ class RequirementDateTime(models.Model):
 
 class RequirementDayTime(models.Model):
 
-	requirement_day_time_user = models.ForeignKey(User)
+	requirement_day_time_user = models.ForeignKey(
+													User,
+													verbose_name="User",
+													)
 
 	days_of_week = (
 					(0,'Monday'),
@@ -402,6 +497,7 @@ class RequirementDayTime(models.Model):
 	# Day of the week
 	day_of_week = models.IntegerField(
 										choices = days_of_week,
+										verbose_name="Day",
 										)
 
 	# Time the req should take effect
@@ -411,10 +507,15 @@ class RequirementDayTime(models.Model):
 				          					)
 
 	# Requirement
-	rqmt_day_employee_type = models.ForeignKey(EmployeeType)
+	rqmt_day_employee_type = models.ForeignKey(
+												EmployeeType,
+												verbose_name="Employee",
+												)
 
 	# Count
-	rqmt_day_employee_count = models.PositiveIntegerField()
+	rqmt_day_employee_count = models.PositiveIntegerField(
+															verbose_name="Count",
+															)
 
 	class Meta:
 		unique_together = (

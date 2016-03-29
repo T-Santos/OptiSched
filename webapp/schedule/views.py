@@ -291,12 +291,10 @@ def create_new_employee(request):
 				obj = employee_info_form.save(commit = False)
 				obj.person_user = request.user
 				obj.save()
-				return HttpResponseRedirect('')
-			else:
-				empoyee_info_form = EmployeeInfoForm()
+				employee_info_form = EmployeeInfoForm()
 				context = {
 							'EmployeeInfoForm': employee_info_form,
-						}
+							}
 
 		else:
 			print("not valid input")
@@ -384,6 +382,16 @@ def edit_employee(request,employee_id):
 
 	if request.method == 'POST':
 
+		objects_to_save = []
+		objects_to_delete = []
+
+		validation_error_found = False
+
+		employee_info_form = EmployeeInfoForm(
+												request.POST,
+												instance = employee,
+												)
+
 		employee_request_daytime_formset = EmployeeRequestDayTimeFormSet(
 																			request.POST,
 																			request.FILES,
@@ -401,65 +409,104 @@ def edit_employee(request,employee_id):
 																	request.FILES,
 																	prefix='employee_type',
 																	)
+		if employee_info_form.is_valid():
+			obj = employee_info_form.save(commit = False)
+			obj.person_user = request.user
+			#obj.save()
+			objects_to_save.append(obj)
+		else:
+			validation_error_found = True
 
 		# Request Date times
-		if employee_request_datetime_formset.is_valid():
+		if (not validation_error_found
+			and employee_request_datetime_formset.is_valid()):
 
 			# Delete
 			for request_form in employee_request_datetime_formset.deleted_forms:
 				if request_form.instance.id:
-					request_form.instance.delete()
+					#request_form.instance.delete()
+					objects_to_delete.append(request_form.instance)
 
 			# Save
 			for request_form in employee_request_datetime_formset:
 
-				if (request_form.is_valid() 
-					and request_form not in employee_request_datetime_formset.deleted_forms
+				if not request_form.is_valid():
+					validation_error_found = True
+					break
+				elif (request_form not in employee_request_datetime_formset.deleted_forms
 					and request_form.has_changed()):
 						obj = request_form.save(commit = False)
 						obj.rqst_date_employee = employee
 						obj.request_date_time_user = request.user
-						obj.save()
+						#obj.save()
+						objects_to_save.append(obj)
+		else:
+			validation_error_found = True
 
 		# Request Day Times
-		if employee_request_daytime_formset.is_valid():
+		if (not validation_error_found
+			and employee_request_daytime_formset.is_valid()):
 
 			# Delete
 			for request_form in employee_request_daytime_formset.deleted_forms:
 				if request_form.instance.id:
-					request_form.instance.delete()
+					#request_form.instance.delete()
+					objects_to_delete.append(request_form.instance)
 
 			# Save
 			for request_form in employee_request_daytime_formset:
 
-				if (request_form.is_valid()
-					and request_form not in employee_request_daytime_formset.deleted_forms
+				if not request_form.is_valid():
+					validation_error_found = True
+					break
+				elif (request_form not in employee_request_daytime_formset.deleted_forms
 					and request_form.has_changed()):
 						obj = request_form.save(commit = False)
 						obj.rqst_day_employee = employee
 						obj.request_day_time_user = request.user
-						obj.save()
+						#obj.save()
+						objects_to_save.append(obj)
+		else:
+				validation_error_found = True
 
 		# Request Day Times
-		if employee_employeetype_formset.is_valid():
+		if (not validation_error_found
+			and employee_employeetype_formset.is_valid()):
 
 			# Delete
 			for form in employee_employeetype_formset.deleted_forms:
 				if form.instance.pk:
-					form.instance.delete()
+					#form.instance.delete()
+					objects_to_delete.append(form.instance)
 
 			# Save
 			for form in employee_employeetype_formset:
 
-				if (form.is_valid()
-					and form not in employee_employeetype_formset.deleted_forms
+				if not form.is_valid():
+					validation_error_found = True
+					break
+				if (form not in employee_employeetype_formset.deleted_forms
 					and form.has_changed()):
 						obj = form.save(commit = False)
 						obj.pet_employee = employee
 						obj.person_employee_type_user = request.user
-						obj.save()
+						#obj.save()
+						objects_to_save.append(obj)
+		else:
+			validation_error_found = True
 
-		return HttpResponseRedirect(reverse(template_redirect))
+		# file objects if everything okay
+		if validation_error_found:
+			"nothing to do"
+		else:
+			# delete all objects
+			for obj in objects_to_delete:
+				obj.delete()
+
+			# save all objects
+			for obj in objects_to_save:
+				obj.save()
+			return HttpResponseRedirect(reverse(template_redirect))
 	else:
 
 		employee_request_datetime_formset = EmployeeRequestDateTimeFormSet(
@@ -476,13 +523,13 @@ def edit_employee(request,employee_id):
 																		prefix='employee_type',
 																		queryset = existing_employee_types,
 																		)
-		context = {
-					'IdentifiedEmployee': employee,
-					'EmployeeInfoForm':employee_info_form,
-					'EmployeeRequestDayTimeFormSet': employee_request_daytime_formset,
-					'EmployeeRequestDateTimeFormSet': employee_request_datetime_formset,
-					'EmployeeEmployeeTypeFormSet': employee_employeetype_formset,
-					}
+	context = {
+				'IdentifiedEmployee': employee,
+				'EmployeeInfoForm':employee_info_form,
+				'EmployeeRequestDayTimeFormSet': employee_request_daytime_formset,
+				'EmployeeRequestDateTimeFormSet': employee_request_datetime_formset,
+				'EmployeeEmployeeTypeFormSet': employee_employeetype_formset,
+				}
 	return render(request,template,context)		
 
 @login_required
@@ -524,6 +571,7 @@ def create_schedule(request):
 											timeslice = TIMESLICE,
 										)
 			a_workday.GenerateShifts()
+			#pdb.set_trace()
 			a_workday.Save()
 			return HttpResponseRedirect(reverse(template_redirect))
 	else:
@@ -583,7 +631,7 @@ def create_date_span(request):
 			return HttpResponseRedirect(reverse(template_redirect))
 	else:        
 
-		form = CreateDateSpanForm(data = request.GET)
+		form = CreateDateSpanForm()
 
 	context = {
 				'DateSpanForm': form,
@@ -603,6 +651,8 @@ def ViewManagerDay(request):
 
 		if request.GET.get('navdate',False):
 			date = request.GET['navdate']
+		elif 'DATE_STR' in request.session:
+			date = request.session['DATE_STR'] 
 		else:
 			date = dt.datetime.today().strftime("%Y-%m-%d")			
 
@@ -636,11 +686,12 @@ def ViewManagerDay(request):
 							'work_day_display': work_day.date_display,
 	   						'shifts': shifts_per_date,
 			   				'date_errors':date_error_strings,
+							'Error': "No shifts for the specified date",
 	   					}
 			except ObjectDoesNotExist:
 				context = {
-						'NavDateForm': form,							
-						'Error': "No Schedule For Date",
+						'NavDateForm': form,
+						'Error': "No workday for the specified date",
 						}
 		else:
 			context = {

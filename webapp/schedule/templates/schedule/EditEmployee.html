@@ -23,7 +23,11 @@
 			        <a data-toggle="collapse" href="#collapse1">General Work Information</a>
 			      </h4>
 			    </div>
-			    <div id="collapse1" class="panel-collapse collapse">
+			    <div id="collapse1" class = {% if EmployeeInfoForm.errors %}
+			    						   		"panel-collapse collapse in"
+			    						   {% else %}
+			    						   		"panel-collapse collapse"
+			    						   	{% endif %}>
 			      <div class="panel-body">
 					{{ EmployeeInfoForm|crispy }}
 	    		  </div>
@@ -38,7 +42,11 @@
 				        <a data-toggle="collapse" href="#collapse2">Typical Day Requests</a>
 				      </h4>
 				    </div>
-				    <div id="collapse2" class="panel-collapse collapse">
+				    <div id="collapse2" class = {% if EmployeeRequestDayTimeFormSet.errors %}
+			    						   		"panel-collapse collapse in"
+			    						   {% else %}
+			    						   		"panel-collapse collapse"
+			    						   	{% endif %}>
 				      <div class="panel-body" id = "id_forms_table">
  						{% crispy EmployeeRequestDayTimeFormSet EmployeeRequestDayTimeFormSet.form.helper %}
 		    		  </div>
@@ -53,7 +61,11 @@
 				        <a data-toggle="collapse" href="#collapse3">Specific Date Requests</a>
 				      </h4>
 				    </div>
-				    <div id="collapse3" class="panel-collapse collapse">
+				    <div id="collapse3" class = {% if EmployeeRequestDateTimeFormSet.errors %}
+			    						   		"panel-collapse collapse in"
+			    						   {% else %}
+			    						   		"panel-collapse collapse"
+			    						   	{% endif %}>
 				      <div class="panel-body" id = "id_forms_table">
  						{% crispy EmployeeRequestDateTimeFormSet EmployeeRequestDateTimeFormSet.form.helper %}
 		    		  </div>
@@ -68,7 +80,11 @@
 				        <a data-toggle="collapse" href="#collapse4">Positions</a>
 				      </h4>
 				    </div>
-				    <div id="collapse4" class="panel-collapse collapse">
+				    <div id="collapse4" class = {% if EmployeeEmployeeTypeFormSet.errors %}
+			    						   		"panel-collapse collapse in"
+			    						   {% else %}
+			    						   		"panel-collapse collapse"
+			    						   	{% endif %}>
 						<div class="panel-body" id = "id_forms_table">
 				    		<div class="col-lg-6">
 		 						{% crispy EmployeeEmployeeTypeFormSet EmployeeEmployeeTypeFormSet.form.helper %}

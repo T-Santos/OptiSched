@@ -184,8 +184,14 @@ class CreateDay(object):
                 # because of the new shifts created we want to update to reflect them
                 employee_types_needed_for_timeslice[:] = []
                 employee_types_needed_for_timeslice = self.GetEmployeeTypesNeededForTimeSlice(time_slice_datetime)
+                employee_needed = False
 
-                if not employee_types_needed_for_timeslice:
+                for employee_type,count in employee_types_needed_for_timeslice:
+                    if not count == 0:
+                        employee_needed = True
+                        break
+
+                if not employee_needed:
                     # no more shifts needed for this timeslice, move on
                     break;
                 else:
@@ -214,10 +220,12 @@ class CreateDay(object):
                                             shift_user = self.user,
                                             shift_date = self.date_model_obj,
                                             employee = employee_new.person,
-                                            shift_employee_type = employee_new.type
+                                            shift_employee_type = employee_new.type,
+                                            start_time = time_slice_datetime.time(),
+                                            end_time = time_slice_datetime.time()
                                             )
             
-                        shift_new.start_time = time_slice_datetime.time()
+                        #shift_new.start_time = time_slice_datetime.time()
                         #shift_new.end_time = time_slice_datetime.time()
 
                         # add new shift object to all and to active lists
@@ -226,17 +234,24 @@ class CreateDay(object):
 
                         # add employee to already working list
                         self.employees_already_working.append(employee_new.person)
-            '''
-                done with creating new shifts
-            '''
+
             # update potential end time
+
+            # seems to work but not sure if best solution
+            # if timeslice == (self.time_slice_total-1):
+            #     time_slice_datetime_endtime = self.ConvertTimeSliceToDateTime((timeslice+1))
+            # else:
+            #     time_slice_datetime_endtime = time_slice_datetime
+
             time_slice_datetime_endtime = self.ConvertTimeSliceToDateTime((timeslice+1))
 
             # update the end times for each active shift
             for active_shift in self.shift_active:
+
                 active_shift.end_time = time_slice_datetime_endtime
 
             # remove any shifts that should be done as of now  
+            # maybe want to see if its time_slice_datetime (double check end of day)
             self.shift_active = self.RemoveActiveShifts(time_slice_datetime_endtime)
 
     def GetEmployeeTypesNeededForTimeSlice(self,datetime):
@@ -267,7 +282,7 @@ class CreateDay(object):
                                                                 [
                                                                     EmployeeType.objects.get(
                                                                                                 employee_type_user = self.user,
-                                                                                                pk = temp_employee_type,
+                                                                                                et_type = temp_employee_type,
                                                                                                 ),
                                                                     temp_employee_requirement_count_list[0]
                                                                     ]
@@ -286,12 +301,12 @@ class CreateDay(object):
                                                                     [
                                                                         EmployeeType.objects.get(
                                                                                                     employee_type_user = self.user,
-                                                                                                    pk = temp_employee_type,
+                                                                                                    et_type = temp_employee_type,
                                                                                                     ),
                                                                         temp_employee_requirement_count_list[0]
                                                                         ]
                                                                     )
-
+        #pdb.set_trace()
         return employee_type_requirements_needed
 
     def GetEmployeeTypeRequirements(self,datetime):
@@ -327,7 +342,7 @@ class CreateDay(object):
             emp_reqs = RequirementDayTime.objects.filter(
                                                             requirement_day_time_user = self.user,
                                                             day_of_week = self.date_model_obj.date.weekday(),
-                                                            rqmt_day_start_time__lte = now
+                                                            rqmt_day_start_time__lte = now.time()
                                                             ).order_by(
                                                                         '-rqmt_day_start_time')
 
@@ -378,7 +393,13 @@ class CreateDay(object):
         # get just the employee types needed    
         temp_emp_types_needed = []
         for emp_type,type_count in emp_types_needed:
-            temp_emp_types_needed.append(emp_type)
+            if not type_count == 0:
+                temp_emp_types_needed.append(emp_type)
+
+        # get the counts for all the active working employee types
+        active_type_counts = {}
+        for active_shift in self.shift_active:
+            active_type_counts[active_shift.shift_employee_type.et_type] = active_type_counts.get(active_shift.shift_employee_type.et_type,0) + 1
 
         
         # ***************************************************************
@@ -389,6 +410,9 @@ class CreateDay(object):
         temp_available_employees = []
         temp_available_employees[:] = []
         temp_available_employees = copy.deepcopy(available_employees)
+
+        # map of { person : [employee types that dont work,...] }
+        employee_type_cant_work_map = {}
 
         for available_employee in temp_available_employees:
             
@@ -414,6 +438,67 @@ class CreateDay(object):
             
             if not temp_et_intersect:
                 available_employees.remove(available_employee)
+                continue
+
+            # for each employee type that is both needed and the employee is associated to
+            # TODO: Might be able to make this more efficient by getting out earlier
+            for employee_type in temp_et_intersect:
+
+                # for each hour that could potentially have its own restriction
+                # todo should probably be for each timeslice in range how many timeslices in min hours from now
+                for hour in range(1,available_employee.person_min_hours_per_shift):
+
+                    # get the datetime min hours from now
+                    future_datetime = datetime + dt.timedelta(
+                                                                hours = hour,
+                                                                )
+                    # get the specific date and day requirements for the future datetime min hours from now
+                    future_employee_type_requirements = self.GetEmployeeTypeRequirements(future_datetime)
+
+                    # if there are none then what exists should persist
+                    if not future_employee_type_requirements:
+                        continue
+                    # if the emloyee type isnt in future requirements then we are fine
+                    elif employee_type.et_type not in future_employee_type_requirements:
+                        continue
+                    # quick check to see 
+                    # if the requirement is to turn it off in the future cant work
+                    elif future_employee_type_requirements[employee_type.et_type][0] == 0:
+                        
+                        # add the employee type if the employee exists
+                        if available_employee in employee_type_cant_work_map:
+
+                            # add the employee type if it doesnt exist
+                            employee_type_cant_work_list = employee_type_cant_work_map[available_employee]
+                            if employee_type not in employee_type_cant_work_list:
+                                employee_type_cant_work_map[available_employee].append(employee_type)
+                        # add the employee and the employee type to the map
+                        else:
+                            employee_type_cant_work_map[available_employee] = [employee_type]
+                    # if the number required is going to be less than the amount of people already working        
+                    elif active_type_counts.get(employee_type.et_type,0) >= future_employee_type_requirements[employee_type.et_type][0]:
+                        
+                        # add the employee type if the employee exists
+                        if available_employee in employee_type_cant_work_map:
+
+                            # add the employee type if it doesnt exist
+                            employee_type_cant_work_list = employee_type_cant_work_map[available_employee]
+                            if employee_type not in employee_type_cant_work_list:
+                                employee_type_cant_work_map[available_employee].append(employee_type)
+                        # add the employee and the employee type to the map
+                        else:
+                            employee_type_cant_work_map[available_employee] = [employee_type]
+
+
+            # sort et intersect and map list for that employee's employee types
+            # sorted(one) == sorted(two)
+            # if the two lists are equal then remove the employee
+            # because the employee can't work for any of the
+            # employee types needed since their min hours are more than is
+            # needed to fill any employee type slots
+            if available_employee in employee_type_cant_work_map:
+                if sorted(temp_et_intersect) == sorted(employee_type_cant_work_map[available_employee]):
+                    available_employees.remove(available_employee)
 
             #-------------------------
             # check to see if the available employee has already worked enough hours for a full week
@@ -433,10 +518,12 @@ class CreateDay(object):
             if (hours_worked_in_week >= available_employee.person_max_hours_per_week):
                 if ( available_employee in available_employees):
                     available_employees.remove(available_employee)
+                    continue
             # if an employee's hours left to work in a week is less than a minimum shift; remove them
             elif (available_employee.person_min_hours_per_shift > (available_employee.person_max_hours_per_week - hours_worked_in_week) ):
                 if ( available_employee in available_employees):
                     available_employees.remove(available_employee)
+                    continue
             # Remove available employees who are available to work based on hours left in the week
             # but have a restriction coming up in the same day that is sooner than
             # a minimum shift. 
@@ -444,7 +531,8 @@ class CreateDay(object):
             elif( self.HoursUntilCantWork(available_employee,datetime) < available_employee.person_min_hours_per_shift ):
                 if ( available_employee in available_employees):
                     available_employees.remove(available_employee)
-            
+                    continue      
+        
         # Get all DateTime requests that encompass the current time
         # and for only potential new employees
         qs_all_datetime_requests = RequestDateTime.objects.filter(
@@ -553,10 +641,22 @@ class CreateDay(object):
             #return_val[0] = random.choice(available_employees)
             
             # get employee types for chosen employee
+            # want to exclude here so that we exlude any
+            # employee types that the person cannot work based on hours left 
+            # in requirement and min hours per shift allowed 
+            # i.e. person is cook and manager (both needed) but a cook
+            # is only needed for 4 hours but the person's min shift is 8 hrs
+            # so they can't be a cook but they can be the manager
+            if return_val[0] in employee_type_cant_work_map:
+                exclude_types = employee_type_cant_work_map[return_val[0]]
+            else:
+                exclude_types = []
             chosen_employee_types = PersonEmployeeType.objects.filter(
                                                                         person_employee_type_user = self.user,
                                                                         pet_employee = return_val[0],
-                                                                        )
+                                                                        ).exclude(
+                                                                                    pet_employee_type__in = exclude_types,
+                                                                                    )
             temp_chosen_employee_types = []
             for chosen_employee_type in chosen_employee_types:
                 temp_chosen_employee_types.append(chosen_employee_type.pet_employee_type)
