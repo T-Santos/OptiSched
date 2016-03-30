@@ -30,7 +30,7 @@ class EmployeeTypeShiftErrorAdmin(admin.ModelAdmin):
 
 	list_filter = ['error_date']
 
-	list_display = ['error_date','error_time','error_emp_type']
+	list_display = ['error_emp_type','error_date','error_start_time','error_end_time']
 
 admin.site.register(Shift,ShiftAdmin)
 admin.site.register(Date,DateAdmin)

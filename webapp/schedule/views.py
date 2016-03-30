@@ -668,24 +668,16 @@ def ViewManagerDay(request):
 														)
 				shifts_per_date = sorted(shifts_per_date, key=operator.attrgetter('start_time'))
 
-				date_error_groups = ViewHelperFunctions.ConvertErrorsToGroups(
-																				work_day,
-																				request.user,
-																				)
-				date_error_groups_compressed = ViewHelperFunctions.CompressErrorGroupsToStrings(
-																									work_day.date,
-																									date_error_groups,
-																									TIMESLICE,
-																									)
-				date_error_strings = ViewHelperFunctions.ConvertCompressedErrorsToStrings(
-																							date_error_groups_compressed
-																							)
+				errors_per_date = EmployeeTypeShiftError.objects.filter(
+																			employee_type_shift_error_user = request.user,
+																			error_date = work_day,
+																			)
 				
 				context = {
 							'NavDateForm': form,
 							'work_day_display': work_day.date_display,
 	   						'shifts': shifts_per_date,
-			   				'date_errors':date_error_strings,
+	   						'date_errors':errors_per_date,
 							'Error': "No shifts for the specified date",
 	   					}
 			except ObjectDoesNotExist:

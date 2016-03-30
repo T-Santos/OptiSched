@@ -32,17 +32,18 @@ class CreateDay(object):
         ***********************************
             should have underscore (_) prefix if private
             
-            date_model_obj              : the Date object created based off of the model
+            date_model_obj                      : the Date object created based off of the model
             employee_type_shift_errors          : list of all notifications generated when creating a work day
+            employee_type_shift_errors_active   : map of current active shift errors keyd by employee_type.et_type
 
-            shift_all                   : list of all Shift objects that are done or in progress
-            shift_active                : list of Shift objects that are currently in progress
+            shift_all                           : list of all Shift objects that are done or in progress
+            shift_active                        : list of Shift objects that are currently in progress
 
-            time_slice                  : int for how many minutes in a time slice say 5 minute increments
-            time_slice_total            : int for the total number of time slices in the given day
+            time_slice                          : int for how many minutes in a time slice say 5 minute increments
+            time_slice_total                    : int for the total number of time slices in the given day
 
-            employee_all                : QuerySet of all Person objects in the DB
-            employees_already_working   : list of Person objects that either cannot work the current time slice because they are already working
+            employee_all                        : QuerySet of all Person objects in the DB
+            employees_already_working           : list of Person objects that either cannot work the current time slice because they are already working
 
 
         ''' 
@@ -71,7 +72,7 @@ class CreateDay(object):
         self.shift_active = []
 
         self.time_slice = self.TIMESLICE
-        self.time_slice_total = self.GetTimeSliceTotal()
+        self.time_slice_total = self.GetNumTimeSliceInSpan(date_start_time,date_end_time)
 
         self.employee_all = Person.objects.filter(
                                                     person_user = self.user,
@@ -83,6 +84,8 @@ class CreateDay(object):
         # maybe should check to see if there are any existing notifications...
         # do we just delete all and start from scratch each time?
         self.employee_type_shift_errors = []
+
+        self.employee_type_shift_errors_active = {}
 
     '''
     ********************************
@@ -109,19 +112,19 @@ class CreateDay(object):
         for notification in self.employee_type_shift_errors:
             notification.save()
 
-    def GetTimeSliceTotal(self):
+    def GetNumTimeSliceInSpan(self,start,end):
         '''
         Returns: Int for the Total number of time slices in a given day with a start time and an end time
 
         '''
 
-        start_mins = ((self.date_model_obj.day_start_time.hour * 60) + self.date_model_obj.day_start_time.minute)
+        start_mins = ((start.hour * 60) + start.minute)
 
-        if self.date_model_obj.day_end_time.hour == 0:
+        if end.hour == 0:
             end_hour = 24
         else:
-            end_hour = self.date_model_obj.day_end_time.hour
-        end_mins = ((end_hour * 60) + self.date_model_obj.day_end_time.minute)
+            end_hour = end.hour
+        end_mins = ((end_hour * 60) + end.minute)
 
         #return (((end_mins - start_mins) / self.time_slice) - 1)
         return (((end_mins - start_mins) / self.time_slice))
@@ -170,10 +173,14 @@ class CreateDay(object):
         
         NewEmployee = namedtuple('NewEmployee', 'person type')
 
+        start_datetime = dt.datetime.combine(self.date_model_obj.date,self.date_model_obj.day_start_time)
+
         # for each time slice in the workday
         for timeslice in range(self.time_slice_total):
 
-            time_slice_datetime = self.ConvertTimeSliceToDateTime(timeslice)
+            time_slice_datetime = self.ConvertTimeSliceToDateTime(start_datetime,timeslice)
+
+            time_slice_endtime_datetime = self.ConvertTimeSliceToDateTime(start_datetime,(timeslice+1))
             
             # Assume there are shifts to be filled in the timeslice
             while True:
@@ -191,9 +198,20 @@ class CreateDay(object):
                         employee_needed = True
                         break
 
+                # if an employee is not needed
                 if not employee_needed:
-                    # no more shifts needed for this timeslice, move on
-                    break;
+                    
+                    # end all active errors and add them to final list
+                    for employee_type,employee_type_shift_error in self.employee_type_shift_errors_active.items():
+
+                        # add it to the all list
+                        self.employee_type_shift_errors.append(
+                                                                employee_type_shift_error
+                                                                )
+                    self.employee_type_shift_errors_active.clear()
+                    break
+
+                # an employee is needed    
                 else:
                     # get employee and type 
                     employee_new = NewEmployee._make(
@@ -202,19 +220,88 @@ class CreateDay(object):
                                                                                 time_slice_datetime,
                                                                             )
                                                         )
-                    # if there isnt an employee to fill a shift log an error an break
-                    if not employee_new.person:
-                        # log error
-                        for employee_type,type_count in employee_types_needed_for_timeslice:
-                            date_notification = EmployeeTypeShiftError(
-                                                                        employee_type_shift_error_user = self.user,
-                                                                        error_date = self.date_model_obj,
-                                                                        error_time = time_slice_datetime.time(),
-                                                                        error_emp_type = employee_type
-                                                                    )
-                            self.employee_type_shift_errors.append(date_notification)
-                        break;
+                    # if there isnt an employee to fill a shift log an error
+                    # and move to next timeslice
+                    if (not employee_new.person
+                        or not employee_new.type):
+
+                        temp_shift_error_active = self.employee_type_shift_errors_active
+
+                        # for each active error in the active map
+                        for active_error_employee_type,employee_type_shift_error in temp_shift_error_active.items():
+
+                            employee_type_found = False
+
+                            # see if the active employee type is needed
+                            for employee_type,count in employee_types_needed_for_timeslice:
+
+                                if employee_type.et_type == active_error_employee_type:
+                                    employee_type_found = True
+                                    break
+
+                            # if it does NOT exist in the new employee types needed list
+                            if not employee_type_found:
+
+                                # add it to the all list
+                                self.employee_type_shift_errors.append(
+                                                                        employee_type_shift_error
+                                                                        )
+                                # remove it from the active list
+                                del self.employee_type_shift_errors_active[active_error_employee_type]
+
+                        # for each employee type needed but doesnt exist
+                        for employee_type_needed,employee_type_needed_count in employee_types_needed_for_timeslice:
+
+                            # if exists in active map
+                            if employee_type_needed.et_type in self.employee_type_shift_errors_active:
+
+                                # if end time of active equals current time
+                                if self.employee_type_shift_errors_active[employee_type_needed.et_type].error_end_time == time_slice_datetime.time():
+
+                                    # update end time of error to current time
+                                    self.employee_type_shift_errors_active[employee_type_needed.et_type].error_end_time = time_slice_endtime_datetime.time()
+
+                                # else get rid of it
+                                else:
+                                    # add it to the all list
+                                    self.employee_type_shift_errors.append(
+                                                                            self.employee_type_shift_errors_active[employee_type_needed.et_type]
+                                                                            )
+
+                                    # remove the employee type from the active map
+                                    del self.employee_type_shift_errors_active[employee_type_needed.et_type]
+                            # else its not in the active map
+                            else:
+
+                                if employee_type_needed_count == 0:
+                                    "done need one since not really required"
+                                else:
+                                    # create a new one
+                                    employee_type_shift_error = EmployeeTypeShiftError(
+                                                                                        employee_type_shift_error_user = self.user,
+                                                                                        error_date = self.date_model_obj,
+                                                                                        error_start_time = time_slice_datetime.time(),
+                                                                                        error_end_time = time_slice_endtime_datetime.time(),
+                                                                                        error_emp_type = employee_type_needed,
+                                                                                        )
+                                    # add it to the active map
+                                    self.employee_type_shift_errors_active[employee_type_needed.et_type] = employee_type_shift_error
+
+                        # done checking for employees for this timeslice, there are none
+                        # go break out searching for new employees and update any existing shifts
+                        break
+                    # create new shift
                     else:
+                        # if the employee type is an active error
+                        if employee_new.type.et_type in self.employee_type_shift_errors_active:
+
+                            # add it to the all list
+                            self.employee_type_shift_errors.append(
+                                                                    self.employee_type_shift_errors_active[employee_new.type.et_type]
+                                                                    )
+                            # delete it from the active list
+                            del self.employee_type_shift_errors_active[employee_new.type.et_type]
+
                         # create the shift object
                         shift_new = Shift(
                                             shift_user = self.user,
@@ -224,9 +311,6 @@ class CreateDay(object):
                                             start_time = time_slice_datetime.time(),
                                             end_time = time_slice_datetime.time()
                                             )
-            
-                        #shift_new.start_time = time_slice_datetime.time()
-                        #shift_new.end_time = time_slice_datetime.time()
 
                         # add new shift object to all and to active lists
                         self.shift_active.append(shift_new)
@@ -235,24 +319,22 @@ class CreateDay(object):
                         # add employee to already working list
                         self.employees_already_working.append(employee_new.person)
 
-            # update potential end time
-
-            # seems to work but not sure if best solution
-            # if timeslice == (self.time_slice_total-1):
-            #     time_slice_datetime_endtime = self.ConvertTimeSliceToDateTime((timeslice+1))
-            # else:
-            #     time_slice_datetime_endtime = time_slice_datetime
-
-            time_slice_datetime_endtime = self.ConvertTimeSliceToDateTime((timeslice+1))
-
             # update the end times for each active shift
             for active_shift in self.shift_active:
 
-                active_shift.end_time = time_slice_datetime_endtime
+                active_shift.end_time = time_slice_endtime_datetime
 
             # remove any shifts that should be done as of now  
             # maybe want to see if its time_slice_datetime (double check end of day)
-            self.shift_active = self.RemoveActiveShifts(time_slice_datetime_endtime)
+            self.shift_active = self.RemoveActiveShifts(time_slice_endtime_datetime)
+
+        # any leftover active errors, log them
+        for employee_type,employee_type_shift_error in self.employee_type_shift_errors_active.items():
+
+            # add it to the all list
+            self.employee_type_shift_errors.append(
+                                                    employee_type_shift_error
+                                                    )
 
     def GetEmployeeTypesNeededForTimeSlice(self,datetime):
         '''
@@ -446,12 +528,14 @@ class CreateDay(object):
 
                 # for each hour that could potentially have its own restriction
                 # todo should probably be for each timeslice in range how many timeslices in min hours from now
-                for hour in range(1,available_employee.person_min_hours_per_shift):
+                future_end_datetime = datetime + dt.timedelta(
+                                                                hours = available_employee.person_min_hours_per_shift,
+                                                                )
+                for future_timeslice in range(1,self.GetNumTimeSliceInSpan(datetime.time(),future_end_datetime.time())):
 
                     # get the datetime min hours from now
-                    future_datetime = datetime + dt.timedelta(
-                                                                hours = hour,
-                                                                )
+                    future_datetime = self.ConvertTimeSliceToDateTime(datetime,future_timeslice)
+
                     # get the specific date and day requirements for the future datetime min hours from now
                     future_employee_type_requirements = self.GetEmployeeTypeRequirements(future_datetime)
 
@@ -750,21 +834,21 @@ class CreateDay(object):
 
         return int(25 - time.hour)
 
-    def ConvertTimeSliceToDateTime(self,time_slice):
+    def ConvertTimeSliceToDateTime(self,datetime,time_slice):
         '''
             given a time slice determine the beginning time of the time slice
             that we are processing depending on the start of the day
         '''
         minutes_past_start = time_slice * self.TIMESLICE
         start_dt = dt.datetime(
-                                    self.date_model_obj.date.year,
-                                    self.date_model_obj.date.month,
-                                    self.date_model_obj.date.day,
-                                    self.date_model_obj.day_start_time.hour,
-                                    self.date_model_obj.day_start_time.minute,
-                                    self.date_model_obj.day_start_time.second,
-                                    )
-        time_slice_datetime = start_dt + datetime.timedelta(minutes = minutes_past_start)
+                                datetime.year,
+                                datetime.month,
+                                datetime.day,
+                                datetime.hour,
+                                datetime.minute,
+                                datetime.second,
+                                )
+        time_slice_datetime = start_dt + dt.timedelta(minutes = minutes_past_start)
 
         # TODO maybe need to round the datetime or nearest TIMESLICE
         return time_slice_datetime

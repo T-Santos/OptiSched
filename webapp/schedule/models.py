@@ -259,6 +259,8 @@ class EmployeeTypeShiftError(models.Model):
 														User,
 														verbose_name="User",
 														)
+	# Employee Type if found an error having to do with employee types
+	error_emp_type = models.ForeignKey('EmployeeType')
 
 	# date for notification
 	error_date = models.ForeignKey(
@@ -266,12 +268,13 @@ class EmployeeTypeShiftError(models.Model):
 									verbose_name="Date",
 									)
 
-	error_time = models.TimeField("Error Time")
+	error_start_time = models.TimeField(
+											"Error Start Time"
+											)
 
-	# TODO Error End time...we're storing too many errors
-
-	# Employee Type if found an error having to do with employee types
-	error_emp_type = models.ForeignKey('EmployeeType')
+	error_end_time = models.TimeField(
+											"Error End Time"
+											)
 
 	def error_display_time(self):
 		return self.error_time.strftime('%I:%M %p')
@@ -280,15 +283,15 @@ class EmployeeTypeShiftError(models.Model):
 		text = ("We could not find an available " +
 				self.error_emp_type.et_type + 
 				" to fill the " + 
-				self.error_time.strftime('%I:%M %p') +
-				#" to " + 
-				#self.ConvertTimeSliceToDateTime(timeslice+1).strftime('%I:%M %p') + 
+				self.error_start_time.strftime('%I:%M %p') +
+				" to " + 
+				self.error_end_time.strftime('%I:%M %p') + 
 				" timeslot based on your criteria.")
 
 		return text
 
 	def __str__(self):
-		return str(self.error_date) + " " + self.error_display_time()
+		return str(self.error_emp_type) + " " + str(self.error_date) + " " + str(self.error_start_time) + " - " + str(self.error_end_time)
 
 class RequestDayTime(models.Model):
 	
