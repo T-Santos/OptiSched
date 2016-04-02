@@ -511,6 +511,9 @@ class CreateDay(object):
                 if not future_end_datetime.hour < 24:
                     available_employees.remove(available_employee)
                     continue
+            elif future_end_datetime.hour < datetime.hour:
+                    available_employees.remove(available_employee)
+                    continue                
             elif self.date_model_obj.day_end_time < future_end_datetime.time():
                 available_employees.remove(available_employee)
                 continue
