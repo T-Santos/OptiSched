@@ -17,7 +17,7 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li {% if home_url in request.get_full_path or "/OptiSched/" == request.get_full_path %} class="active" {% endif %}><a href="{{ home_url }}">Home</a></li>
+<!--             <li {% if home_url in request.get_full_path or "/OptiSched/" == request.get_full_path %} class="active" {% endif %}><a href="{{ home_url }}">Home</a></li>-->
             <li {% if about_url in request.get_full_path %} class="active" {% endif %}><a href="{{ about_url }}">About</a></li>
             <li {% if contact_url in request.get_full_path %} class="active" {% endif %}><a href="{{ contact_url }}">Contact</a></li>
             <li {% if dash_url in request.get_full_path %} class="active" {% endif %}><a href="{{ dash_url }}">Dashboard</a></li>

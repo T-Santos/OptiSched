@@ -44,5 +44,6 @@ admin.site.register(RequirementDateTime)
 
 admin.site.register(RequestDayTime)
 admin.site.register(RequestDateTime)
+admin.site.register(GeneralSetting)
 
 admin.site.register(EmployeeTypeShiftError,EmployeeTypeShiftErrorAdmin)

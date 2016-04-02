@@ -7,12 +7,57 @@ from django.utils import timezone
 
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ValidationError
+from django.utils.translation import ugettext_lazy as _
 from django.db.models import permalink
 
 from django.contrib.auth.models import User
 
 # Create Shift Error logging
 # Date and Error Code (internal / external)
+
+def validate_timeslice(timeslice):
+	if int(timeslice) == int(0):
+			raise ValidationError(
+									_(
+										'%(timeslice)s is not between 1 - 60 (inclusive)'
+										),
+									params={
+												'timeslice':timeslice,
+												}
+									)
+	elif ( (timeslice < 1)
+			or (timeslice > 60)):
+			raise ValidationError(
+									_(
+										'%(timeslice)s is not between 1 - 60 (inclusive)'
+										),
+									params={
+												'timeslice':timeslice,
+												}
+									)
+						
+class GeneralSetting(models.Model):
+
+	general_setting_user = models.ForeignKey(
+												User,
+												)
+
+	general_setting_time_slice = models.PositiveIntegerField(
+																verbose_name = "Time Slice (in minutes)",
+																help_text = "Determines how frequently criteria should be checked",
+																blank = True,
+																default = 30,
+																validators = [validate_timeslice],
+																)
+	# def clean(self):
+	# 	if int(self.general_setting_time_slice) == int(0):
+	# 		raise ValidationError("Time Slice must be between 1 - 60 (inclusive)")
+	# 	elif ( 1 > self.general_setting_time_slice
+	# 			or not self.general_setting_time_slice <= 60):
+	# 		raise ValidationError("Time Slice must be between 1 - 60 (inclusive)")
+
+	def __str__(self):             	
+		return str(self.general_setting_user)
 
 class Person(models.Model):
 
@@ -52,11 +97,20 @@ class Person(models.Model):
 																)
 	def clean(self):
 
+		# shift validation
 		if not (self.person_min_hours_per_shift <= self.person_max_hours_per_shift):
 			raise ValidationError("Min Hours larger than Max Hours (per shift)")
 
+		# week validation
 		if not (self.person_min_hours_per_week <= self.person_max_hours_per_week):
 			raise ValidationError("Min Hours larger than Max Hours (per week)")
+
+		# shift to week validation
+		if not (self.person_max_hours_per_shift <= self.person_max_hours_per_week):
+			raise ValidationError("Max Hours Per Shift larger than Max Hours Per Week")
+
+		if not (self.person_min_hours_per_shift <= self.person_min_hours_per_week):
+			raise ValidationError("Min Hours Per Shift larger than Min Hours Per Week")
 
 	def name(self):
         	return ''.join([self.last_name,',', self.first_name])
@@ -100,7 +154,6 @@ class PersonEmployeeType(models.Model):
 	def __str__(self):
 		return str(self.pet_employee) + ' ' + str(self.pet_employee_type)
 
-
 class Shift(models.Model):
 
 	shift_user = models.ForeignKey(
@@ -130,10 +183,10 @@ class Shift(models.Model):
 	end_time = models.TimeField("End Time")
 
 	def before_working_day_pc(self):
-		return ((self.start_time.hour / float(24) ) * 100)
+		return ((self.start_time.hour / float(25) ) * 100)
 
 	def working_day_pc(self):
-		return (((self.end_hour() - self.start_time.hour) /  float(24) ) * 100)
+		return (((self.end_hour() - self.start_time.hour) /  float(25) ) * 100)
 
 	def hours(self):
 		start_hours = self.start_time.hour
@@ -145,10 +198,10 @@ class Shift(models.Model):
 		
 		if (self.end_time.hour == 23 and
 		    self.end_time.minute > 0 ):
-			end_hours = 24
+			end_hours = 25
 		elif (self.end_time.hour == 0 and
 		      self.end_time.minute == 0):
-			end_hours = 24
+			end_hours = 25
 		elif (self.end_time.hour == 0 and
 		      self.end_time.minute > 0):
 			end_hours = 1
@@ -357,7 +410,6 @@ class RequestDayTime(models.Model):
 	def __str__(self):
 		return str(self.rqst_day_employee) + ' ' + str(self.get_day_of_week_display()) + ' ' + str(self.rqst_day_start_time.strftime("%H:%M")) + " " +  str(self.rqst_day_type)
 
-
 class RequestDateTime(models.Model):
 	# There are going to be serveral of these if a vaca spans multiple days 
 
@@ -532,7 +584,7 @@ class RequirementDayTime(models.Model):
 
 	# Members
 	def __str__(self):
-		return str(self.get_day_of_week_display())+ ' ' + str(self.rqmt_day_start_time.strftime("%H:%M")) + " " + str(self.rqmt_day_employee_type) + " " +  str(self.rqmt_day_employee_count)
+		return str(self.get_day_of_week_display()) + ' ' + str(self.rqmt_day_start_time.strftime("%H:%M")) + " " + str(self.rqmt_day_employee_type) + " " +  str(self.rqmt_day_employee_count)
 
 
 

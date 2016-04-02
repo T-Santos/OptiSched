@@ -24,7 +24,7 @@ class CreateDay(object):
                 date,
                 date_start_time = datetime.time(0,0,0),
                 date_end_time = datetime.time(0,0,0),
-                timeslice = 5,
+                timeslice = 30,
                 ):
         '''
         ***********************************
@@ -220,6 +220,7 @@ class CreateDay(object):
                                                                                 time_slice_datetime,
                                                                             )
                                                         )
+
                     # if there isnt an employee to fill a shift log an error
                     # and move to next timeslice
                     if (not employee_new.person
@@ -326,6 +327,7 @@ class CreateDay(object):
 
             # remove any shifts that should be done as of now  
             # maybe want to see if its time_slice_datetime (double check end of day)
+            #self.shift_active = self.RemoveActiveShifts(time_slice_datetime)
             self.shift_active = self.RemoveActiveShifts(time_slice_endtime_datetime)
 
         # any leftover active errors, log them
@@ -497,7 +499,23 @@ class CreateDay(object):
         employee_type_cant_work_map = {}
 
         for available_employee in temp_available_employees:
+
+            # get the earliest datetime that the employee could potentially stop working
+            future_end_datetime = datetime + dt.timedelta(
+                                                            hours = available_employee.person_min_hours_per_shift,
+                                                            )
+
+            # remove any employee that has a longer min shift than hours left in the day
+            # handle scenario where criteria goes beyond end of day
+            if self.date_model_obj.day_end_time == dt.time(0,0,0):
+                if not future_end_datetime.hour < 24:
+                    available_employees.remove(available_employee)
+                    continue
+            elif self.date_model_obj.day_end_time < future_end_datetime.time():
+                available_employees.remove(available_employee)
+                continue
             
+            # get all of the employee's employee types
             temp_person_employee_types = []     
             temp_person_employee_types = PersonEmployeeType.objects.filter(
                                                                             person_employee_type_user = self.user,
@@ -526,11 +544,7 @@ class CreateDay(object):
             # TODO: Might be able to make this more efficient by getting out earlier
             for employee_type in temp_et_intersect:
 
-                # for each hour that could potentially have its own restriction
-                # todo should probably be for each timeslice in range how many timeslices in min hours from now
-                future_end_datetime = datetime + dt.timedelta(
-                                                                hours = available_employee.person_min_hours_per_shift,
-                                                                )
+                # for each future timeslice that could potentially have its own restriction
                 for future_timeslice in range(1,self.GetNumTimeSliceInSpan(datetime.time(),future_end_datetime.time())):
 
                     # get the datetime min hours from now
@@ -573,9 +587,6 @@ class CreateDay(object):
                         else:
                             employee_type_cant_work_map[available_employee] = [employee_type]
 
-
-            # sort et intersect and map list for that employee's employee types
-            # sorted(one) == sorted(two)
             # if the two lists are equal then remove the employee
             # because the employee can't work for any of the
             # employee types needed since their min hours are more than is
@@ -859,6 +870,10 @@ class CreateDay(object):
         Takes a list of shifts in active_shifts and updates it
         based on requirements and people working enough hours etc
 
+        TODO: needs to not be remove by hours worked but by timeslice maybe
+                Changing things to now reference 25 instead of 24 seems to work okay
+                for most cases but not sure if its a comprehensive fix
+
         ****************************************************
         '''
         shifts_to_screen = self.shift_active
@@ -878,7 +893,7 @@ class CreateDay(object):
                 "prevent from active shift"
             else:
                 temp_active_shifts.append(active_shift)
-        
+
         # update active shifts list
         shifts_to_screen[:] = []
         shifts_to_screen = temp_active_shifts[:]
@@ -914,7 +929,7 @@ class CreateDay(object):
                         active_shifts_by_employee_type[shift.shift_employee_type.et_type] = [shift]
                     
 
-                # for all the requirements get the first one and get its count so we have a mapt of
+                # for all the requirements get the first one and get its count so we have a map of
                 # { Employee_Type , Count }
                 requirement_count_by_employee_type = {}
                 for employee_type, requirement_list in employee_type_requirements.items():
@@ -928,6 +943,11 @@ class CreateDay(object):
                         if( requirement_count_by_employee_type[employee_type] > len(shift_list) ):
                             temp_active_shifts += shift_list
                         else:
+                            # TODO: instead of random, remove based on setting aka 
+                            # 1) max shift per employee
+                            # 2) max employees per day
+                            # 3) max profits
+                            # 4) max efficentcy (best employees)
                             temp_active_shifts += random.sample(shift_list,requirement_count_by_employee_type[employee_type])
         
                 # update active shifts list

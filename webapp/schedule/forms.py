@@ -11,15 +11,12 @@ from .models import *
 import datetime as dt
 import pdb
 
+class GeneralScheduleSettingsForm(forms.ModelForm):
 
-# class LogInForm(forms.Form):
-	
-# 	username = forms.EmailField()
-# 	password = forms.CharField()
-# 	other = forms.CharField()
-# #	password = forms.CharField(widget=forms.PasswordInput())
-# #	class Meta:
-# #		model = User
+	class Meta:
+			model = GeneralSetting
+			#fields = '__all__'
+			exclude = ['general_setting_user']
 
 class NavDateForm(forms.Form):
 	# get the latest date in the database and increase it by 1 otherwise use today's date
@@ -61,8 +58,9 @@ class CreateDateForm(forms.Form):
 			and end_time == datetime.time(0,0,0)):
 			"Do nothing"
 		elif not start_time < end_time:
-			msg = "End Time must fall after Start Time"
-			raise forms.ValidationError(msg)
+			if not end_time == datetime.time(0,0,0):
+				msg = "End Time must fall after Start Time"
+				raise forms.ValidationError(msg)
 
 class CreateDateSpanForm(forms.Form):
 
@@ -111,8 +109,9 @@ class CreateDateSpanForm(forms.Form):
 			and end_time == datetime.time(0,0,0)):
 			"Do nothing"
 		elif not start_time < end_time:
-			msg = "End Time must fall after Start Time"
-			raise forms.ValidationError(msg)
+			if not end_time == datetime.time(0,0,0):
+				msg = "End Time must fall after Start Time"
+				raise forms.ValidationError(msg)
 
 class EmployeeInfoForm(forms.ModelForm):
 	class Meta:

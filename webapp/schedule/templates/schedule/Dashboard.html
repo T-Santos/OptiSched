@@ -16,6 +16,47 @@
 </div>
 
 <div class="row">
+  {% if show_getting_started %}
+    <div class="col-sm-4">
+      <div class="panel panel-success">
+        <div class="panel-heading">
+          <h3 class="panel-title">Getting Started With Your OptiSched</h3>
+        </div>
+        <div class="panel-body">
+          <div class="list-group">
+            {% for not_completed_task in getting_started_not_complete %}
+
+              {% if not_completed_task == "Add Employees" %}
+                <a href="{% url 'OptiSched:create_new_employee' %}" class="list-group-item">{{ not_completed_task }}</a>
+              {% elif not_completed_task == "Add Employee Types" %}
+                <a href="{% url 'OptiSched:general_settings' %}" class="list-group-item">{{ not_completed_task }}</a>
+              {% elif not_completed_task == "Attach Employee Types to Employees" %}
+                <a href="{% url 'OptiSched:EmployeeList' %}" class="list-group-item">{{ not_completed_task }}</a>
+              {% elif not_completed_task == "Create Schedule Criteria" %}
+                <a href="{% url 'OptiSched:schedule_settings' %}" class="list-group-item">{{ not_completed_task }}</a>
+              {% endif %}
+
+            {% endfor %}
+            
+            {% for completed_task in getting_started_complete %}
+
+              {% if completed_task == "Add Employees" %}
+                <a href="{% url 'OptiSched:create_new_employee' %}" class="list-group-item"><del>{{ completed_task }} </del></a>
+              {% elif completed_task == "Add Employee Types" %}
+                <a href="{% url 'OptiSched:general_settings' %}" class="list-group-item"><del>{{ completed_task }} </del></a>
+              {% elif completed_task == "Attach Employee Types to Employees" %}
+                <a href="{% url 'OptiSched:EmployeeList' %}" class="list-group-item"><del>{{ completed_task }} </del></a>
+              {% elif completed_task == "Create Schedule Criteria" %}
+                <a href="{% url 'OptiSched:schedule_settings' %}" class="list-group-item"><del>{{ completed_task }} </del></a>
+              {% endif %}
+
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div><!-- /.col-sm-4 -->
+  {% endif %}
+
   <div class="col-sm-4">
     <div class="panel panel-success">
       <div class="panel-heading">
@@ -23,9 +64,13 @@
       </div>
       <div class="panel-body">
         <div class="list-group">
-          {% for recently_created_day in recently_created_days %}
-            <a href="{{ recently_created_day.get_absolute_url }}" class="list-group-item">{{ recently_created_day.date }}</a>
-          {% endfor %}
+          {% if recently_created_days %}
+            {% for recently_created_day in recently_created_days %}
+              <a href="{{ recently_created_day.get_absolute_url }}" class="list-group-item">{{ recently_created_day.date }}</a>
+            {% endfor %}
+          {% else %}
+            <p> No schedules to display </p>
+          {% endif %}
         </div>
       </div>
     </div>

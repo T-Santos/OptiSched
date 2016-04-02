@@ -51,37 +51,70 @@ def contact(request):
 
 @login_required
 def dashboard(request):
-	# TODO: Maybe pass if the user is an employee or manager to show them a different dash
-	#pdb.set_trace()
+
+	getting_started_complete = []
+	getting_started_not_complete = []
+
 	from_date = dt.date.today() + dt.timedelta(days=3)
+
 	recently_created_days = Date.objects.filter(
 													date_user = request.user,
 													date__lte = from_date,
 													).order_by(
 																'-date'
 																)[:7]
-	recently_created_shifts = Shift.objects.filter(
-													shift_user = request.user,
-													shift_date__lte = from_date,
-													).order_by(
-																'-shift_date'
-																)[:5]
+	any_employees = Person.objects.filter(
+											person_user = request.user,
+											)
 
-	recently_viewed_shifts = Shift.objects.filter(
-													shift_user = request.user,
-													shift_date__lte = from_date,
-													).order_by(
-																'-shift_date'
-																)[:5]
-	recently_viewed_employees = Person.objects.filter(
-														person_user = request.user,
-														)[:5]
+	any_employee_types = EmployeeType.objects.filter(
+														employee_type_user = request.user,
+														)
+	any_person_employee_types = PersonEmployeeType.objects.filter(
+																	person_employee_type_user = request.user,
+																	)
+
+	any_schedule_criteria = RequirementDayTime.objects.filter(
+																requirement_day_time_user = request.user,
+																)
+	if not any_schedule_criteria:
+		any_schedule_criteria = RequirementDateTime.objects.filter(
+																	requirement_date_time_user = request.user,
+																	)
+	if (any_employees
+		and any_employee_types
+		and any_person_employee_types
+		and any_schedule_criteria):
+		show_getting_started = False
+	else:
+		show_getting_started = True
+
+		# Should be in the order they should display on the screen		
+		if any_employee_types:
+			getting_started_complete.append('Add Employee Types')
+		else:
+			getting_started_not_complete.append('Add Employee Types')
+		
+		if any_employees:
+			getting_started_complete.append('Add Employees')
+		else:
+			getting_started_not_complete.append('Add Employees')
+		
+		if any_schedule_criteria:
+			getting_started_complete.append('Create Schedule Criteria')
+		else:
+			getting_started_not_complete.append('Create Schedule Criteria')
+		
+		if any_person_employee_types:
+			getting_started_complete.append('Attach Employee Types to Employees')
+		else:
+			getting_started_not_complete.append('Attach Employee Types to Employees')
 
 	context = {
 				'recently_created_days': recently_created_days,
-				'recently_created_shifts': recently_created_shifts,
-				'recently_viewed_shifts': recently_viewed_shifts,
-				'recently_viewed_employees': recently_viewed_employees,
+				'show_getting_started': show_getting_started,
+				'getting_started_complete': getting_started_complete,
+				'getting_started_not_complete': getting_started_not_complete,
 				}
 	template = "Dashboard.html"
 	return render(request,template,context)
@@ -178,6 +211,17 @@ def schedule_settings(request):
 	existing_requirement_date_times = RequirementDateTime.objects.filter(
 																			requirement_date_time_user = request.user,
 																			)
+	try:
+		general_settings_instance = GeneralSetting.objects.get(
+																general_setting_user = request.user,
+																)
+
+		general_settings_form = GeneralScheduleSettingsForm(
+															instance = general_settings_instance,
+															)
+	except GeneralSetting.DoesNotExist:
+		general_settings_instance = False
+		general_settings_form = GeneralScheduleSettingsForm()
 
 	if existing_requirement_day_times:
 		requirement_daytimes_blank_lines = 5
@@ -201,6 +245,16 @@ def schedule_settings(request):
 
 	if request.method == 'POST':
 
+		if general_settings_instance:
+			general_settings_form = GeneralScheduleSettingsForm(
+																request.POST,
+																instance = general_settings_instance,
+																)
+		else:
+			general_settings_form = GeneralScheduleSettingsForm(
+																request.POST,
+																)
+
 		employee_requirement_daytime_formset = RequirementDayTimeFormSet(
 																			request.POST,
 																			request.FILES,
@@ -212,44 +266,49 @@ def schedule_settings(request):
 																			request.FILES,
 																			prefix='requirement_date_time',
 																			)
+		if general_settings_form.is_valid():
+			obj = general_settings_form.save(commit = False)
+			obj.general_setting_user = request.user
+			obj.save()
 
-		# Request Date times
-		if employee_requirement_daytime_formset.is_valid():
 
-			# Delete
-			for form in employee_requirement_daytime_formset.deleted_forms:
-				if form.instance.pk:
-					form.instance.delete()
+			# Request Date times
+			if employee_requirement_daytime_formset.is_valid():
 
-			# Save
-			for form in employee_requirement_daytime_formset:
+				# Delete
+				for form in employee_requirement_daytime_formset.deleted_forms:
+					if form.instance.pk:
+						form.instance.delete()
 
-				if (form.is_valid() 
-					and form not in employee_requirement_daytime_formset.deleted_forms
-					and form.has_changed()):
-						obj = form.save(commit = False)
-						obj.requirement_day_time_user = request.user
-						obj.save()
+				# Save
+				for form in employee_requirement_daytime_formset:
 
-		# Request Date times
-		if employee_requirement_datetime_formset.is_valid():
+					if (form.is_valid() 
+						and form not in employee_requirement_daytime_formset.deleted_forms
+						and form.has_changed()):
+							obj = form.save(commit = False)
+							obj.requirement_day_time_user = request.user
+							obj.save()
 
-			# Delete
-			for form in employee_requirement_datetime_formset.deleted_forms:
-				if form.instance.pk:
-					form.instance.delete()
+				# Request Date times
+				if employee_requirement_datetime_formset.is_valid():
 
-			# Save
-			for form in employee_requirement_datetime_formset:
+					# Delete
+					for form in employee_requirement_datetime_formset.deleted_forms:
+						if form.instance.pk:
+							form.instance.delete()
 
-				if (form.is_valid() 
-					and form not in employee_requirement_datetime_formset.deleted_forms
-					and form.has_changed()):
-						obj = form.save(commit = False)
-						obj.requirement_date_time_user = request.user
-						obj.save()
+					# Save
+					for form in employee_requirement_datetime_formset:
 
-		return HttpResponseRedirect(reverse(template_redirect))
+						if (form.is_valid() 
+							and form not in employee_requirement_datetime_formset.deleted_forms
+							and form.has_changed()):
+								obj = form.save(commit = False)
+								obj.requirement_date_time_user = request.user
+								obj.save()
+
+					return HttpResponseRedirect(reverse(template_redirect))
 
 	else:
 
@@ -262,10 +321,11 @@ def schedule_settings(request):
 																			prefix='requirement_date_time',
 																			queryset = existing_requirement_date_times,
 																			)
-		context = {
-					'RequirementDayTimeFormSet': employee_requirement_daytime_formset,
-					'RequirementDateTimeFormSet': employee_requirement_datetime_formset,
-					}
+	context = {
+				'GeneralSettingsForm': general_settings_form,
+				'RequirementDayTimeFormSet': employee_requirement_daytime_formset,
+				'RequirementDateTimeFormSet': employee_requirement_datetime_formset,
+				}
 
 	return render(request,template,context)
 
@@ -275,37 +335,205 @@ def create_new_employee(request):
 
 	template_redirect = 'OptiSched:dashboard'
 	template = 'CreateEmployee.html'
+	
+	EmployeeRequestDayTimeFormSet = forms.modelformset_factory(
+																RequestDayTime,
+																form = EmployeeRequestDayTimeForm,
+																extra = 5,
+																can_delete = True,
+																)
+
+	EmployeeRequestDateTimeFormSet = forms.modelformset_factory(
+																RequestDateTime,
+																form = EmployeeRequestDateTimeForm,
+																extra = 5,
+																can_delete = True,
+																)
+
+	EmployeeEmployeeTypeFormSet = make_EmployeeEmployeeTypeForm(
+																request.user,
+																2,
+																)
 
 	if request.method == 'POST':
 
+		objects_to_save = []
+		objects_to_delete = []
+
+		validation_error_found = False
+
+		employee = ""
+
 		employee_info_form = EmployeeInfoForm(request.POST)
 
+		employee_request_daytime_formset = EmployeeRequestDayTimeFormSet(
+																			request.POST,
+																			request.FILES,
+																			prefix='request_day_time',
+																			)
+
+		employee_request_datetime_formset = EmployeeRequestDateTimeFormSet(
+																			request.POST,
+																			request.FILES,
+																			prefix='request_date_time',
+																			)
+
+		employee_employeetype_formset = EmployeeEmployeeTypeFormSet(
+																	request.POST,
+																	request.FILES,
+																	prefix='employee_type',
+																	)
 		if employee_info_form.is_valid():
-
-			if 'SaveAndDash' in request.POST:
-				obj = employee_info_form.save(commit = False)
-				obj.person_user = request.user
-				obj.save()
-				return HttpResponseRedirect(reverse(template_redirect))
-			elif 'SaveAndAnother' in request.POST:
-				obj = employee_info_form.save(commit = False)
-				obj.person_user = request.user
-				obj.save()
-				employee_info_form = EmployeeInfoForm()
-				context = {
-							'EmployeeInfoForm': employee_info_form,
-							}
-
+			employee = Person.objects.create(
+												person_user = request.user,
+												first_name = employee_info_form.cleaned_data.get('first_name'),
+												last_name = employee_info_form.cleaned_data.get('last_name'),
+												person_min_hours_per_week = employee_info_form.cleaned_data.get('person_min_hours_per_week'),
+												person_max_hours_per_week = employee_info_form.cleaned_data.get('person_max_hours_per_week'),
+												person_min_hours_per_shift = employee_info_form.cleaned_data.get('person_min_hours_per_shift'),
+												person_max_hours_per_shift = employee_info_form.cleaned_data.get('person_max_hours_per_shift'),
+												)
 		else:
-			print("not valid input")
-			context = {
-						'EmployeeInfoForm':EmployeeInfoForm,
-					}
+			validation_error_found = True
 
+		# Request Date times
+		if (not validation_error_found
+			and employee_request_datetime_formset.is_valid()):
+
+			# Delete
+			for request_form in employee_request_datetime_formset.deleted_forms:
+				if request_form.instance.id:
+					objects_to_delete.append(request_form.instance)
+
+			# Save
+			for request_form in employee_request_datetime_formset:
+
+				if not request_form.is_valid():
+					validation_error_found = True
+					break
+				elif (request_form not in employee_request_datetime_formset.deleted_forms
+					and request_form.has_changed()):
+						obj = request_form.save(commit = False)
+						obj.rqst_date_employee = employee
+						obj.request_date_time_user = request.user
+						objects_to_save.append(obj)
+		else:
+			validation_error_found = True
+
+		# Request Day Times
+		if (not validation_error_found
+			and employee_request_daytime_formset.is_valid()):
+
+			# Delete
+			for request_form in employee_request_daytime_formset.deleted_forms:
+				if request_form.instance.id:
+					objects_to_delete.append(request_form.instance)
+
+			# Save
+			for request_form in employee_request_daytime_formset:
+
+				if not request_form.is_valid():
+					validation_error_found = True
+					break
+				elif (request_form not in employee_request_daytime_formset.deleted_forms
+					and request_form.has_changed()):
+						obj = request_form.save(commit = False)
+						obj.rqst_day_employee = employee
+						obj.request_day_time_user = request.user
+						objects_to_save.append(obj)
+		else:
+				validation_error_found = True
+
+		# Request Day Times
+		if (not validation_error_found
+			and employee_employeetype_formset.is_valid()):
+
+			# Delete
+			for form in employee_employeetype_formset.deleted_forms:
+				if form.instance.pk:
+					objects_to_delete.append(form.instance)
+
+			# Save
+			for form in employee_employeetype_formset:
+
+				if not form.is_valid():
+					validation_error_found = True
+					break
+				if (form not in employee_employeetype_formset.deleted_forms
+					and form.has_changed()):
+						obj = form.save(commit = False)
+						obj.pet_employee = employee
+						obj.person_employee_type_user = request.user
+						objects_to_save.append(obj)
+		else:
+			validation_error_found = True
+
+		if validation_error_found:
+			if employee:
+				employee.delete()
+		elif 'SaveAndDash' in request.POST:
+			
+			# delete all objects
+			for obj in objects_to_delete:
+				obj.delete()
+
+			# save all objects
+			for obj in objects_to_save:
+				obj.save()
+
+			return HttpResponseRedirect(reverse(template_redirect))
+		elif 'SaveAndAnother' in request.POST:
+			
+			# delete all objects
+			for obj in objects_to_delete:
+				obj.delete()
+
+			# save all objects
+			for obj in objects_to_save:
+				obj.save()
+
+			# reset screen for new employee to be added
+			employee_info_form = EmployeeInfoForm()
+
+			employee_request_datetime_formset = EmployeeRequestDateTimeFormSet(
+																				prefix='request_date_time',
+																				queryset = RequestDateTime.objects.none(),																			
+																				)
+
+			employee_request_daytime_formset = EmployeeRequestDayTimeFormSet(
+																				prefix='request_day_time',
+																				queryset = RequestDayTime.objects.none(),
+																				)
+
+			employee_employeetype_formset = EmployeeEmployeeTypeFormSet(
+																			prefix='employee_type',
+																			queryset = PersonEmployeeType.objects.none(),
+																			)
 	else:
+
 		employee_info_form = EmployeeInfoForm()
-		context = {
-					'EmployeeInfoForm': employee_info_form,
+
+		employee_request_datetime_formset = EmployeeRequestDateTimeFormSet(
+																			prefix='request_date_time',
+																			queryset = RequestDateTime.objects.none(),																			
+																			)
+
+		employee_request_daytime_formset = EmployeeRequestDayTimeFormSet(
+																			prefix='request_day_time',
+																			queryset = RequestDayTime.objects.none(),
+																			)
+
+		employee_employeetype_formset = EmployeeEmployeeTypeFormSet(
+																		prefix='employee_type',
+																		queryset = PersonEmployeeType.objects.none(),
+																		)
+
+
+	context = {
+				'EmployeeInfoForm': employee_info_form,
+				'EmployeeRequestDayTimeFormSet': employee_request_daytime_formset,
+				'EmployeeRequestDateTimeFormSet': employee_request_datetime_formset,
+				'EmployeeEmployeeTypeFormSet': employee_employeetype_formset,
 				}
 	return render(request,template,context)
 
@@ -557,18 +785,32 @@ def create_schedule(request):
 		# check whether it's valid:
 		if form.is_valid():
 			# process the data in form.cleaned_data as required
+			timeslice = ""
+
 			new_date = date_external = form.cleaned_data['f_date']
 			start_time = form.cleaned_data.get('f_start_time')
 			end_time = form.cleaned_data.get('f_end_time')
 
 			request.session['DATE_STR'] = new_date.isoformat()
 
+			try:
+				general_settings_instance = GeneralSetting.objects.get(
+																		general_setting_user = request.user,
+																		)
+
+				timeslice = general_settings_instance.general_setting_time_slice
+			except GeneralSetting.DoesNotExist:
+				"nothing to do"
+
+			if not timeslice:
+				timeslice = TIMESLICE
+
 			a_workday = Workday.CreateDay(
 											user = request.user,
 											date = new_date,
 											date_start_time = start_time,
 											date_end_time = end_time,
-											timeslice = TIMESLICE,
+											timeslice = timeslice,
 										)
 			a_workday.GenerateShifts()
 			#pdb.set_trace()
@@ -596,6 +838,8 @@ def create_date_span(request):
 
 		if form.is_valid():
 
+			timeslice = ""
+
 			from_date = form.cleaned_data.get('f_from_date')
 			thru_date = form.cleaned_data.get('f_thru_date')
 			#from_date_obj = dt.datetime.strptime(from_date, "%Y-%m-%d").date()
@@ -606,6 +850,18 @@ def create_date_span(request):
 
 			#start_time_obj = dt.datetime.strptime(start_time, "%H:%M:%S").time()
 			#end_time_obj = dt.datetime.strptime(end_time, "%H:%M:%S").time()
+
+			try:
+				general_settings_instance = GeneralSetting.objects.get(
+																		general_setting_user = request.user,
+																		)
+
+				timeslice = general_settings_instance.general_setting_time_slice
+			except GeneralSetting.DoesNotExist:
+				"nothing to do"
+
+			if not timeslice:
+				timeslice = TIMESLICE
 
 
 			all_dates = []
@@ -618,7 +874,7 @@ def create_date_span(request):
 												date = single_date,
 												date_start_time = start_time,
 												date_end_time = end_time,
-												timeslice = TIMESLICE)
+												timeslice = timeslice)
 				a_workday.GenerateShifts()
 
 				all_dates.append(a_workday)
