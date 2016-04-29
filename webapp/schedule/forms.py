@@ -123,34 +123,46 @@ class EmployeeRequestDayTimeForm(forms.ModelForm):
 
 	helper = FormHelper()
 	helper.form_tag = False
+
 	helper.layout = Layout(
 							Div(
 								Div(
-									Field(
-											'rqst_day_type'
-											),
-									css_class = 'col-lg-3'),
-								Div(
-									Field(
-											'day_of_week'
-											),
-									css_class = 'col-lg-3'),
-								Div(
-									Field(
-											'rqst_day_start_time',
-											css_class = 'time',
-											),
-									css_class = 'col-lg-2'),
-								Div(
-									Field(
-											'rqst_day_end_time',
-											css_class = 'time',
-											),
-									css_class = 'col-lg-2'), 
-								Div('DELETE', css_class = 'col-lg-2', style = 'padding-top: 20px'),
-							css_class = "row"
+									Div(
+										Field(
+												'rqst_day_type',
+												),
+										css_class = 'col-lg-3',
+										),
+									Div(
+										Field(
+												'day_of_week',
+												),
+										css_class = 'col-lg-3',
+										),
+									Div(
+										Field(
+												'rqst_day_start_time',
+												css_class = 'time',
+												),
+										css_class = 'col-lg-2',
+										), 
+									Div(
+										Field(
+												'rqst_day_end_time',
+												css_class = 'time',
+												),
+										css_class = 'col-lg-2',
+										),
+									Div(
+										'DELETE',
+										css_class = 'col-lg-2',
+										style = 'padding-top: 20px'
+										),
+									css_class = "row",
+									),
+								css_class="dynamic-form",
+								),
 							)
-						)
 	
 	class Meta:
 			model = RequestDayTime
@@ -165,31 +177,48 @@ class EmployeeRequestDateTimeForm(forms.ModelForm):
 
 	helper = FormHelper()
 	helper.form_tag = False
+
+
+		
 	helper.layout = Layout(
 							Div(
-								Field(
-										'rqst_date_type',
+								Div(
+									Div(
+										Field(
+												'rqst_date_type',
+												),
+										css_class = 'col-lg-3',
 										),
-								css_class = 'col-lg-3'),
-							Div(
-								Field(
-										'rqst_date_date',
-										css_class = 'date',
+									Div(
+										Field(
+												'rqst_date_date',
+												css_class = 'date',
+												),
+										css_class = 'col-lg-3',
 										),
-								css_class = 'col-lg-3'),
-							Div(
-								Field(
-										'rqst_date_start_time',
-										css_class = 'time',
+									Div(
+										Field(
+												'rqst_date_start_time',
+												css_class = 'time',
+												),
+										css_class = 'col-lg-2',
+										), 
+									Div(
+										Field(
+												'rqst_date_end_time',
+												css_class = 'time',
+												),
+										css_class = 'col-lg-2',
 										),
-								css_class = 'col-lg-2'),
-							Div(
-								Field(
-										'rqst_date_end_time',
-										css_class = 'time',
+									Div(
+										'DELETE',
+										css_class = 'col-lg-2',
+										style = 'padding-top: 20px'
 										),
-								css_class = 'col-lg-2'), 
-							Div('DELETE', css_class = 'col-lg-2', style = 'padding-top: 20px'),
+									css_class = "row",
+									),
+								css_class="dynamic-form",
+								),
 							)
 	
 	class Meta:
@@ -210,16 +239,27 @@ def make_EmployeeEmployeeTypeForm(
 		helper = FormHelper()
 		helper.form_tag = False
 		#helper.form_show_labels = False
+
+
+		
 		helper.layout = Layout(
 								Div(
-									Field(
-											'pet_employee_type',
+									Div(
+										Div(
+											Field(
+													'pet_employee_type',
+													),
+											css_class = 'col-lg-10',
 											),
-									css_class = 'col-lg-10'
-									), 
-								Div(
-									'DELETE',
-									css_class = 'col-lg-2',
+										Div(
+											Field(
+													'DELETE',
+													),
+											css_class = 'col-lg-2',
+											),
+										css_class = "row",
+										),
+									css_class="dynamic-form",
 									),
 								)
 
@@ -279,31 +319,41 @@ def make_RequirementDayTimeForm(
 		helper.form_tag = False
 		helper.layout = Layout(
 								Div(
-									Field(
-											'day_of_week',
+									Div(
+										Div(
+											Field(
+													'day_of_week',
+													),
+											css_class = 'col-lg-3',
 											),
-									css_class = 'col-lg-3',
+										Div(
+											Field(
+													'rqmt_day_start_time',
+													css_class = 'time',
+													),
+											css_class = 'col-lg-2',
+											),
+										Div(
+											Field(
+													'rqmt_day_employee_count',
+													),
+											css_class = 'col-lg-2',
+											), 
+										Div(
+											Field(
+													'rqmt_day_employee_type',
+													),
+											css_class = 'col-lg-3',
+											),
+										Div(
+											'DELETE',
+											css_class = 'col-lg-2',
+											style = 'padding-top: 20px'
+											),
+										css_class = "row",
+										),
+									css_class="dynamic-form",
 									),
-								Div(
-									Field(
-											'rqmt_day_start_time',
-											css_class = 'time',
-											),
-									css_class = 'col-lg-2',
-									),
-								Div(
-									Field(
-											'rqmt_day_employee_count',
-											),
-									css_class = 'col-lg-2',
-									), 
-								Div(
-									Field(
-											'rqmt_day_employee_type',
-											),
-									css_class = 'col-lg-3',
-									),
-								Div('DELETE', css_class = 'col-lg-2', style = 'padding-top: 20px'),
 								)
 		
 		class Meta:
@@ -332,45 +382,49 @@ def make_RequirementDayTimeForm(
 										can_delete = True,
 										)
 
-def make_RequirementDateTimeForm(
-								user,
-								extra,
-								):
+def make_RequirementDateTimeForm(user,extra,):
 	class RequirementDateTimeForm(forms.ModelForm):
 
 		helper = FormHelper()
 		helper.form_tag = False
+		
 		helper.layout = Layout(
 								Div(
-									Field(
-											'rqmt_date_date',
-											css_class = 'date',
+									Div(
+										Div(
+											Field(
+													'rqmt_date_date',
+													css_class = 'date',
+													),
+											css_class = 'col-lg-3',
 											),
-									css_class = 'col-lg-3',
-									),
-								Div(
-									Field(
-											'rqmt_date_time',
-											css_class = 'time',
+										Div(
+											Field(
+													'rqmt_date_time',
+													css_class = 'time',
+													),
+											css_class = 'col-lg-3',
 											),
-									css_class = 'col-lg-3',
-									),
-								Div(
-									Field(
-											'rqmt_date_employee_count',
+										Div(
+											Field(
+													'rqmt_date_employee_count',
+													),
+											css_class = 'col-lg-2',
+											), 
+										Div(
+											Field(
+													'rqmt_date_employee_type',
+													),
+											css_class = 'col-lg-2',
 											),
-									css_class = 'col-lg-2',
-									), 
-								Div(
-									Field(
-											'rqmt_date_employee_type',
+										Div(
+											'DELETE',
+											css_class = 'col-lg-2',
+											style = 'padding-top: 20px'
 											),
-									css_class = 'col-lg-2',
-									),
-								Div(
-									'DELETE',
-									css_class = 'col-lg-2',
-									style = 'padding-top: 20px',
+										css_class = "row",
+										),
+									css_class="dynamic-form",
 									),
 								)
 		

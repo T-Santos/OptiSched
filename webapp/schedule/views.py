@@ -224,14 +224,14 @@ def schedule_settings(request):
 		general_settings_form = GeneralScheduleSettingsForm()
 
 	if existing_requirement_day_times:
-		requirement_daytimes_blank_lines = 5
+		requirement_daytimes_blank_lines = 1
 	else:
 		requirement_daytimes_blank_lines = 5
 
 	if existing_requirement_date_times:
 		requirement_datetimes_blank_lines = 1
 	else:
-		requirement_datetimes_blank_lines = 3
+		requirement_datetimes_blank_lines = 5
 
 	RequirementDayTimeFormSet = make_RequirementDayTimeForm(
 																	request.user,
@@ -471,8 +471,8 @@ def create_new_employee(request):
 		if validation_error_found:
 			if employee:
 				employee.delete()
-		elif 'SaveAndDash' in request.POST:
-			
+		else:
+
 			# delete all objects
 			for obj in objects_to_delete:
 				obj.delete()
@@ -481,34 +481,27 @@ def create_new_employee(request):
 			for obj in objects_to_save:
 				obj.save()
 
-			return HttpResponseRedirect(reverse(template_redirect))
-		elif 'SaveAndAnother' in request.POST:
-			
-			# delete all objects
-			for obj in objects_to_delete:
-				obj.delete()
+			if 'SaveAndDash' in request.POST:
+				return HttpResponseRedirect(reverse(template_redirect))
+			elif 'SaveAndAnother' in request.POST:
 
-			# save all objects
-			for obj in objects_to_save:
-				obj.save()
+				# reset screen for new employee to be added
+				employee_info_form = EmployeeInfoForm()
 
-			# reset screen for new employee to be added
-			employee_info_form = EmployeeInfoForm()
+				employee_request_datetime_formset = EmployeeRequestDateTimeFormSet(
+																					prefix='request_date_time',
+																					queryset = RequestDateTime.objects.none(),																			
+																					)
 
-			employee_request_datetime_formset = EmployeeRequestDateTimeFormSet(
-																				prefix='request_date_time',
-																				queryset = RequestDateTime.objects.none(),																			
+				employee_request_daytime_formset = EmployeeRequestDayTimeFormSet(
+																					prefix='request_day_time',
+																					queryset = RequestDayTime.objects.none(),
+																					)
+
+				employee_employeetype_formset = EmployeeEmployeeTypeFormSet(
+																				prefix='employee_type',
+																				queryset = PersonEmployeeType.objects.none(),
 																				)
-
-			employee_request_daytime_formset = EmployeeRequestDayTimeFormSet(
-																				prefix='request_day_time',
-																				queryset = RequestDayTime.objects.none(),
-																				)
-
-			employee_employeetype_formset = EmployeeEmployeeTypeFormSet(
-																			prefix='employee_type',
-																			queryset = PersonEmployeeType.objects.none(),
-																			)
 	else:
 
 		employee_info_form = EmployeeInfoForm()
@@ -552,7 +545,8 @@ def edit_employee(request,employee_id):
 	#employee = get_object_or_404(Person,employee_id)	
 
 	# Set up vars
-	template_redirect = 'OptiSched:dashboard'
+	template_redirect_dashboard = 'OptiSched:dashboard'
+	template_redirect_employee_list = 'OptiSched:EmployeeList'
 	template = 'EditEmployee.html'
 
 	employee_info_form = EmployeeInfoForm(instance = employee)
@@ -727,6 +721,7 @@ def edit_employee(request,employee_id):
 		if validation_error_found:
 			"nothing to do"
 		else:
+				
 			# delete all objects
 			for obj in objects_to_delete:
 				obj.delete()
@@ -734,7 +729,11 @@ def edit_employee(request,employee_id):
 			# save all objects
 			for obj in objects_to_save:
 				obj.save()
-			return HttpResponseRedirect(reverse(template_redirect))
+
+			if 'SaveAndDashboard' in request.POST:
+				return HttpResponseRedirect(reverse(template_redirect_dashboard))
+			elif 'SaveAndEmployeeList' in request.POST:
+				return HttpResponseRedirect(reverse(template_redirect_employee_list))
 	else:
 
 		employee_request_datetime_formset = EmployeeRequestDateTimeFormSet(
@@ -805,15 +804,19 @@ def create_schedule(request):
 			if not timeslice:
 				timeslice = TIMESLICE
 
+			create_from_scratch = False
+			if 'NewWorkday' in request.POST:
+				create_from_scratch = True
+
 			a_workday = Workday.CreateDay(
 											user = request.user,
 											date = new_date,
 											date_start_time = start_time,
 											date_end_time = end_time,
 											timeslice = timeslice,
+											create_from_scratch = create_from_scratch,
 										)
 			a_workday.GenerateShifts()
-			#pdb.set_trace()
 			a_workday.Save()
 			return HttpResponseRedirect(reverse(template_redirect))
 	else:
@@ -864,6 +867,12 @@ def create_date_span(request):
 				timeslice = TIMESLICE
 
 
+
+			create_from_scratch = False
+			if 'NewSpan' in request.POST:
+				create_from_scratch = True
+
+
 			all_dates = []
 
 			# create and populate dates
@@ -874,7 +883,9 @@ def create_date_span(request):
 												date = single_date,
 												date_start_time = start_time,
 												date_end_time = end_time,
-												timeslice = timeslice)
+												timeslice = timeslice,
+												create_from_scratch = create_from_scratch,
+												)
 				a_workday.GenerateShifts()
 
 				all_dates.append(a_workday)

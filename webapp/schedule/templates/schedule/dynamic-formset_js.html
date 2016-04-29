@@ -1,0 +1,79 @@
+<script type="text/javascript">
+
+	function updateElementIndex(el, prefix, ndx) {
+		var id_regex = new RegExp('(' + prefix + '-\\d+)');
+		var replacement = prefix + '-' + ndx;
+		if ($(el).attr("for")) $(el).attr("for", $(el).attr("for").replace(id_regex, replacement));
+		if (el.id) el.id = el.id.replace(id_regex, replacement);
+		if (el.name) el.name = el.name.replace(id_regex, replacement);
+	}
+
+    function addForm(btn, prefix) {
+
+        var formCount = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val());
+        var row = $('#' + prefix).find('.dynamic-form:first').clone(false).get(0);
+
+        $(row).removeAttr('id').insertAfter($('#' + prefix).find('.dynamic-form:last')).children('.hidden').removeClass('hidden');
+
+        $(row).children().not(':last').children().each(function() {
+    	    updateElementIndex(this, prefix, formCount);
+    	    $(this).val('');
+        });
+
+        $(row).find('.delete-row').click(function() {
+    	    deleteForm(this, prefix);
+        });
+
+        /* 
+            initialize any new datetimepickers
+        */
+        $(row).find('.datetime').each(function() {
+            $(this).datetimepicker(date_time_args);  
+        });
+
+        $(row).find('.date').each(function() {
+            $(this).datetimepicker(date_args);  
+        });
+
+        $(row).find('.time').each(function() {
+            $(this).datetimepicker(time_args);  
+        });
+
+        /*
+            clear out any input fields
+        */
+
+        $(row).find('input').val('').end();
+        $(row).find('option').removeAttr('selected');
+        $(row).find('.checkboxinput').prop('checked',false);
+
+        /* 
+            Find all children under new row we just added
+            Note:   there's probably a better way to do this other than '*' and filtering out those without
+                     an ID, but I couldn't find anything in common among them (like a class or whatever)
+        */
+        $(row).find("*").each(function() { 
+
+            updateElementIndex(this, prefix, formCount);
+            
+        });
+
+        /*
+            Update the forms meta data
+        */
+        $('#id_' + prefix + '-TOTAL_FORMS').val(formCount + 1);
+        return false;
+    }
+
+    function deleteForm(btn, prefix) {
+        $(btn).parents('.dynamic-form').remove();
+        var forms = $('.dynamic-form');
+        $('#id_' + prefix + '-TOTAL_FORMS').val(forms.length);
+        for (var i=0, formCount=forms.length; i<formCount; i++) {
+    	    $(forms.get(i)).children().not(':last').children().each(function() {
+    	        updateElementIndex(this, prefix, i);
+    	    });
+        }
+        return false;
+    }
+</script>

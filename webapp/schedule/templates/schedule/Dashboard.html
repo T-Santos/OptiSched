@@ -66,7 +66,7 @@
         <div class="list-group">
           {% if recently_created_days %}
             {% for recently_created_day in recently_created_days %}
-              <a href="{{ recently_created_day.get_absolute_url }}" class="list-group-item">{{ recently_created_day.date }}</a>
+              <a href="{{ recently_created_day.get_absolute_url }}" class="list-group-item">{{ recently_created_day.date_display }}</a>
             {% endfor %}
           {% else %}
             <p> No schedules to display </p>

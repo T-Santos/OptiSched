@@ -1,37 +1,42 @@
 
 <script type="text/javascript">
 
+    var date_time_args = {
+                            format: 'YYYY-MM-DD HH:mm',
+                            useStrict: true,
+                            allowInputToggle: true,
+                            ignoreReadonly: true,
+                            sideBySide: true,
+                            timeZone: null
+                            };
+    var date_args = {
+                        format: 'YYYY-MM-DD',
+                        useStrict: true,
+                        allowInputToggle: true,
+                        ignoreReadonly: true,
+                        };
+
+    var time_args = {
+                        format: 'HH:mm',
+                        useStrict: true,
+                        allowInputToggle: true,
+                        ignoreReadonly: true,
+                        };
+
     $(function() {              
-                   $('.datetime').datetimepicker({
-                                                format: 'YYYY-MM-DD HH:mm',
-                                                useStrict: true,
-                                                allowInputToggle: true,
-                                                ignoreReadonly: true,
-                                                sideBySide: true,
-                                                timeZone: null
-                                                })
+                   $('.datetime').datetimepicker(date_time_args)
                             .find('input')
                             .addClass("form-control");
                 }); 
 
     $(function() {              
-                   $('.date').datetimepicker({
-                                                format: 'YYYY-MM-DD',
-                                                useStrict: true,
-                                                allowInputToggle: true,
-                                                ignoreReadonly: true,
-                                                })
+                   $('.date').datetimepicker(date_args)
                             .find('input')
                             .addClass("form-control");
                 }); 
 
     $(function() {              
-                   $('.time').datetimepicker({
-                                                format: 'HH:mm',
-                                                useStrict: true,
-                                                allowInputToggle: true,
-                                                ignoreReadonly: true,
-                                                })
+                   $('.time').datetimepicker(time_args)
                             .find('input')
                             .addClass("form-control");
                 });  

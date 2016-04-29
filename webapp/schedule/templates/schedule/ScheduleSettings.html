@@ -8,6 +8,32 @@
 {% block content %}
 
 {% include 'datetime_js.html' %}
+{% include 'dynamic-formset_js.html' %}
+
+	<script type="text/javascript">
+    <!--
+    $(function () {
+
+        $('#add_rqmt_date_time').click(function() {
+    	    return addForm(this, 'requirement_date_time');
+        });
+
+        $('.delete-row').click(function() {
+    	    return deleteForm(this, 'requirement_date_time');
+        });
+
+        $('#add_rqmt_day_time').click(function() {
+    	    return addForm(this, 'requirement_day_time');
+        });
+
+        $('.delete-row').click(function() {
+    	    return deleteForm(this, 'requirement_day_time');
+        });
+    })
+    //-->
+    </script>
+
+
 
 	<h2> Edit Schedule Settings </h2>
 
@@ -47,8 +73,9 @@
 				    						   {% else %}
 				    						   		"panel-collapse collapse"
 				    						   	{% endif %}>
-				      <div class="panel-body">
+				      <div class="panel-body" id='requirement_day_time'>
  						{% crispy RequirementDayTimeFormSet RequirementDayTimeFormSet.form.helper %}
+						<input name="AddDayTime" class="btn btn-primary" type="button" value="Add" id="add_rqmt_day_time">
 		    		  </div>
 				    </div>
 				 </div>
@@ -66,8 +93,9 @@
 				    						   {% else %}
 				    						   		"panel-collapse collapse"
 				    						   	{% endif %}>
-				      <div class="panel-body">
+				      <div class="panel-body" id='requirement_date_time'>
  						{% crispy RequirementDateTimeFormSet RequirementDateTimeFormSet.form.helper %}
+						<input name="AddDateTime" class="btn btn-primary" type="button" value="Add" id="add_rqmt_date_time">
 		    		  </div>
 				    </div>
 				 </div>

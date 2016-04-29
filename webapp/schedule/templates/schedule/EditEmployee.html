@@ -8,6 +8,38 @@
 {% block content %}
 
 {% include 'datetime_js.html' %}
+{% include 'dynamic-formset_js.html' %}
+
+	<script type="text/javascript">
+    <!--
+    $(function () {
+
+        $('#add_rqst_date_time').click(function() {
+    	    return addForm(this, 'request_date_time');
+        });
+
+        $('.delete-row').click(function() {
+    	    return deleteForm(this, 'request_date_time');
+        });
+
+        $('#add_rqst_day_time').click(function() {
+    	    return addForm(this, 'request_day_time');
+        });
+
+        $('.delete-row').click(function() {
+    	    return deleteForm(this, 'request_day_time');
+        });
+
+        $('#add_employee_type').click(function() {
+    	    return addForm(this, 'employee_type');
+        });
+
+        $('.delete-row').click(function() {
+    	    return deleteForm(this, 'employee_type');
+        });
+    })
+    //-->
+    </script>
 
 	<h2> Editing {{IdentifiedEmployee.name_normal_id}} </h2>
 
@@ -47,8 +79,9 @@
 			    						   {% else %}
 			    						   		"panel-collapse collapse"
 			    						   	{% endif %}>
-				      <div class="panel-body" id = "id_forms_table">
+				      <div class="panel-body" id = "request_day_time">
  						{% crispy EmployeeRequestDayTimeFormSet EmployeeRequestDayTimeFormSet.form.helper %}
+						<input name="AddRequestDayTime" class="btn btn-primary" type="button" value="Add" id="add_rqst_day_time">
 		    		  </div>
 				    </div>
 				 </div>
@@ -66,8 +99,9 @@
 			    						   {% else %}
 			    						   		"panel-collapse collapse"
 			    						   	{% endif %}>
-				      <div class="panel-body" id = "id_forms_table">
+				      <div class="panel-body" id = "request_date_time">
  						{% crispy EmployeeRequestDateTimeFormSet EmployeeRequestDateTimeFormSet.form.helper %}
+						<input name="AddRequestDateTime" class="btn btn-primary" type="button" value="Add" id="add_rqst_date_time">
 		    		  </div>
 				    </div>
 				 </div>
@@ -85,9 +119,10 @@
 			    						   {% else %}
 			    						   		"panel-collapse collapse"
 			    						   	{% endif %}>
-						<div class="panel-body" id = "id_forms_table">
+						<div class="panel-body" id = "employee_type">
 				    		<div class="col-lg-6">
 		 						{% crispy EmployeeEmployeeTypeFormSet EmployeeEmployeeTypeFormSet.form.helper %}
+							<input name="AddEmployeeType" class="btn btn-primary" type="button" value="Add" id="add_employee_type">
 				    		</div>
 				    	</div>
 			    		<div class='col-lg-6'></div>
@@ -97,7 +132,8 @@
 
 		</div>
 
-        <input name="SaveEdits" class="btn btn-success" type="submit" value="Save edits">
+        <input name="SaveAndDashboard" class="btn btn-success" type="submit" value="Save and return to Dashboard">
+        <input name="SaveAndEmployeeList" class="btn btn-success" type="submit" value="Save and return to Employee List">
 
 	</form>
 

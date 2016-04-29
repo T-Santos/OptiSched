@@ -25,6 +25,7 @@ class CreateDay(object):
                 date_start_time = datetime.time(0,0,0),
                 date_end_time = datetime.time(0,0,0),
                 timeslice = 30,
+                create_from_scratch = True,
                 ):
         '''
         ***********************************
@@ -37,6 +38,7 @@ class CreateDay(object):
             employee_type_shift_errors_active   : map of current active shift errors keyd by employee_type.et_type
 
             shift_all                           : list of all Shift objects that are done or in progress
+            shift_all_existing                  : list of all valid existing shifts before compile begins
             shift_active                        : list of Shift objects that are currently in progress
 
             time_slice                          : int for how many minutes in a time slice say 5 minute increments
@@ -68,7 +70,8 @@ class CreateDay(object):
                                     day_end_time=date_end_time,
                                     )
 
-        self.shift_all = self.GetAllShifts()
+        self.shift_all = self.GetAllShifts(create_from_scratch)
+        self.shift_all_existing = copy.deepcopy(self.shift_all)
         self.shift_active = []
 
         self.time_slice = self.TIMESLICE
@@ -79,6 +82,7 @@ class CreateDay(object):
                                                     )
 
         # these should all be private setters
+        # needs to be after set of shift_all since it relies on it
         self.employees_already_working = self.GetAlreadyWorkingEmployees()
 
         # maybe should check to see if there are any existing notifications...
@@ -129,19 +133,41 @@ class CreateDay(object):
         #return (((end_mins - start_mins) / self.time_slice) - 1)
         return (((end_mins - start_mins) / self.time_slice))
 
-    def GetAllShifts(self):
+    def GetAllShifts(self,delete_all_shifts):
         '''
             Get all the shifts that have already been saved for a given date
         '''
         shift_all = []
+        shifts_to_delete = []
 
         shifts = Shift.objects.filter(
                                         shift_user = self.user,
                                         shift_date = self.date_model_obj,
                                         )
-        
-        for shift in shifts:
-            shift_all.append(shift)
+        if delete_all_shifts:
+
+            shifts_to_delete = shifts
+            
+        else:
+            
+            # find any shifts that the employee was choosen to work for
+            # but no longer has that employee type
+            for shift in shifts:
+                try:
+                    PersonEmployeeType.objects.get(
+                                                    person_employee_type_user = self.user,
+                                                    pet_employee = shift.employee,
+                                                    pet_employee_type = shift.shift_employee_type,
+                                                    )
+                except PersonEmployeeType.DoesNotExist:
+                    shifts_to_delete.append(shift)
+                else:
+                    shift_all.append(shift)
+
+        # remove the shifts that are no longer valid
+        if shifts_to_delete:
+            for shift in shifts_to_delete:
+                shift.delete()
 
         return shift_all
 
@@ -158,8 +184,7 @@ class CreateDay(object):
 
     def GenerateShifts(self):
         '''
-            Called to generate shifts for a Workday
-
+            Called to generate shifts for a Workday. Only creates new shifts, doesn't save them off.
 
             employee_types_needed_for_timeslice :   List of EmployeeType objects or 
                                                     False if none are needed in a give timeslice
@@ -169,6 +194,13 @@ class CreateDay(object):
             time_slice                          :   counter for which time slice we are processing in the given day
             time_slice_datetime                 :   the counter and workday start time converted into a datetime object
         '''
+
+        # Delete any old errors before generating the new ones
+        EmployeeTypeShiftError.objects.filter(
+                                                employee_type_shift_error_user = self.user,
+                                                error_date = self.date_model_obj
+                                                ).delete()
+
         employee_types_needed_for_timeslice = []
         
         NewEmployee = namedtuple('NewEmployee', 'person type')
@@ -337,6 +369,29 @@ class CreateDay(object):
             self.employee_type_shift_errors.append(
                                                     employee_type_shift_error
                                                     )
+    def GetCurrentEmployeeTypeCounts(self,datetime):
+        '''
+            Go through the active shifts and existing shifts for the current datetime
+            and get the employee types and counts
+        '''
+
+        # map of {employee type: count}
+        all_working = {}
+
+        # get the counts for all the actively working employees based on their type
+        if self.shift_active:
+            for active_shift in self.shift_active:
+                all_working[active_shift.shift_employee_type.et_type] = all_working.get(active_shift.shift_employee_type.et_type,0) + 1
+
+        # get the counts for all the existing shifts that are working during the
+        # current timeslice
+        if self.shift_all_existing:
+            for existing_shift in self.shift_all_existing:
+                if (datetime.time() >= existing_shift.start_time  and
+                    datetime.time() < existing_shift.end_time):
+                    all_working[existing_shift.shift_employee_type.et_type] = all_working.get(existing_shift.shift_employee_type.et_type,0) + 1
+        return all_working
+
 
     def GetEmployeeTypesNeededForTimeSlice(self,datetime):
         '''
@@ -357,7 +412,27 @@ class CreateDay(object):
             "Log as an error"
         else:
 
-            if( not(self.shift_active) ):
+            # get the counts for all the active working employee types
+            # and existing shifts
+            employee_type_and_counts = self.GetCurrentEmployeeTypeCounts(datetime)
+
+            if ( employee_type_and_counts ):
+
+                # for all the requirements, if they aren't filled make sure we return that we need them
+                for temp_employee_type, temp_employee_requirement_count_list in employee_type_requirements.items():
+
+                    if( employee_type_and_counts.get(temp_employee_type,0) < temp_employee_requirement_count_list[0] ):
+                        employee_type_requirements_needed.append(
+                                                                    [
+                                                                        EmployeeType.objects.get(
+                                                                                                    employee_type_user = self.user,
+                                                                                                    et_type = temp_employee_type,
+                                                                                                    ),
+                                                                        temp_employee_requirement_count_list[0]
+                                                                        ]
+                                                                    )
+
+            else:
                 
                 # if there are no active shifts, we need to fill all spots defined by the requirements
                 # [0] is the most relevant time since we append them [most,relevant,to,least,relevant]
@@ -371,26 +446,6 @@ class CreateDay(object):
                                                                     temp_employee_requirement_count_list[0]
                                                                     ]
                                                                 )
-            else:
-                # get the counts for all the active working employee types
-                active_type_counts = {}
-                for active_shift in self.shift_active:
-                    active_type_counts[active_shift.shift_employee_type.et_type] = active_type_counts.get(active_shift.shift_employee_type.et_type,0) + 1
-
-                # for all the requirements, if they aren't filled make sure we return that we need them
-                for temp_employee_type, temp_employee_requirement_count_list in employee_type_requirements.items():
-
-                    if( active_type_counts.get(temp_employee_type,0) < temp_employee_requirement_count_list[0] ):
-                        employee_type_requirements_needed.append(
-                                                                    [
-                                                                        EmployeeType.objects.get(
-                                                                                                    employee_type_user = self.user,
-                                                                                                    et_type = temp_employee_type,
-                                                                                                    ),
-                                                                        temp_employee_requirement_count_list[0]
-                                                                        ]
-                                                                    )
-        #pdb.set_trace()
         return employee_type_requirements_needed
 
     def GetEmployeeTypeRequirements(self,datetime):
@@ -481,9 +536,7 @@ class CreateDay(object):
                 temp_emp_types_needed.append(emp_type)
 
         # get the counts for all the active working employee types
-        active_type_counts = {}
-        for active_shift in self.shift_active:
-            active_type_counts[active_shift.shift_employee_type.et_type] = active_type_counts.get(active_shift.shift_employee_type.et_type,0) + 1
+        employee_type_and_counts = self.GetCurrentEmployeeTypeCounts(datetime)
 
         
         # ***************************************************************
@@ -577,7 +630,7 @@ class CreateDay(object):
                         else:
                             employee_type_cant_work_map[available_employee] = [employee_type]
                     # if the number required is going to be less than the amount of people already working        
-                    elif active_type_counts.get(employee_type.et_type,0) >= future_employee_type_requirements[employee_type.et_type][0]:
+                    elif employee_type_and_counts.get(employee_type.et_type,0) >= future_employee_type_requirements[employee_type.et_type][0]:
                         
                         # add the employee type if the employee exists
                         if available_employee in employee_type_cant_work_map:

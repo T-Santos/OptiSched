@@ -149,7 +149,14 @@ class PersonEmployeeType(models.Model):
 											verbose_name="Position",
 											)
 
-	# Members
+	class Meta:
+		unique_together = (
+							(
+								"person_employee_type_user",
+								"pet_employee",
+								"pet_employee_type",
+								),
+							)
 	
 	def __str__(self):
 		return str(self.pet_employee) + ' ' + str(self.pet_employee_type)
@@ -301,7 +308,7 @@ class Date(models.Model):
 		return self.date.isocalendar()[1]
 
 	def date_display(self):
-        	 return self.day_of_week() + ' ' + str(self.date) + ' ' + 'week: ' + str(self.week())
+        	 return str(self.day_of_week()) + ' ' + str(self.date) + ' ' + 'week: ' + str(self.week())
 
 	def __str__(self):
 		return str(self.date)
