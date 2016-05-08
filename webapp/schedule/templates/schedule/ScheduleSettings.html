@@ -44,9 +44,9 @@
 
 			<div class="panel-group">
 				 <div class="panel panel-default">
-				    <div class="panel-heading">
+				    <div class="panel-heading" data-toggle="collapse" href="#collapse1">
 				      <h4 class="panel-title">
-				        <a data-toggle="collapse" href="#collapse1">General</a>
+				       General
 				      </h4>
 				    </div>
 				    <div id="collapse1" class={% if GeneralSettingsForm.errors %}
@@ -55,7 +55,11 @@
 				    						   		"panel-collapse collapse"
 				    						   	{% endif %}>
 				      <div class="panel-body">
-							{{ GeneralSettingsForm|crispy }}
+				      	<div class="row">
+				      		<div class="col-lg-4">
+								{{ GeneralSettingsForm|crispy }}
+							</div>
+						</div>
 		    		  </div>
 				    </div>
 				 </div>
@@ -63,12 +67,12 @@
 
 			<div class="panel-group">
 				 <div class="panel panel-default">
-				    <div class="panel-heading">
+				    <div class="panel-heading" data-toggle="collapse" href="#collapse2">
 				      <h4 class="panel-title">
-				        <a data-toggle="collapse" href="#collapse2">Typical Workday Requirements</a>
+				        Typical Workday Requirements
 				      </h4>
 				    </div>
-				    <div id="collapse2" class={% if RequirementDayTimeFormSet.errors %}
+				    <div id="collapse2" class={% if RequirementDayTimeFormSetErrors %}
 			    						   			"panel-collapse collapse in"
 				    						   {% else %}
 				    						   		"panel-collapse collapse"
@@ -83,12 +87,12 @@
 
 			<div class="panel-group">
 				 <div class="panel panel-default">
-				    <div class="panel-heading">
+				    <div class="panel-heading" data-toggle="collapse" href="#collapse3">
 				      <h4 class="panel-title">
-				        <a data-toggle="collapse" href="#collapse3">Exception Workday Requirements</a>
+				        Exception Workday Requirements
 				      </h4>
 				    </div>
-				    <div id="collapse3" class={% if RequirementDateTimeFormSet.errors %}
+				    <div id="collapse3" class={% if RequirementDateTimeFormSetErrors %}
 				    						   		"panel-collapse collapse in"
 				    						   {% else %}
 				    						   		"panel-collapse collapse"

@@ -141,7 +141,9 @@ def general_settings(request):
 
 	existing_employee_types = EmployeeType.objects.filter(
 															employee_type_user = request.user,
-															)
+															).order_by(
+																		'et_type',
+																		)
 
 	if existing_employee_types:
 		employee_type_blank_lines = 1
@@ -159,10 +161,15 @@ def general_settings(request):
 
 	if request.method == 'POST':
 
+		validation_error_found = False
+
+		objects_to_save = []
+		objects_to_delete = []
+
 		employee_type_formset = EmployeeTypeFormSet(
 													request.POST,
 													request.FILES,
-													prefix='employee_type',
+													prefix = 'employee_type',
 													)
 
 		# employee types
@@ -171,17 +178,43 @@ def general_settings(request):
 			# Delete
 			for form in employee_type_formset.deleted_forms:
 				if form.instance.pk:
-					form.instance.delete()
-
+					objects_to_delete.append(form.instance)
+			
 			# Save
+			# ideally would want this in formset validation
+			# so that everywhere doesnt need this logic
+			employee_types = []
 			for form in employee_type_formset:
 
-				if (form.is_valid() 
-					and form not in employee_type_formset.deleted_forms
-					and form.has_changed()):
-						obj = form.save(commit=False)
-						obj.employee_type_user = request.user
-						obj.save()
+				if form.is_valid():
+
+					if form not in employee_type_formset.deleted_forms:
+
+						if form.instance.et_type:
+
+							if form.has_changed():
+								obj = form.save(commit=False)
+								obj.employee_type_user = request.user
+								objects_to_save.append(obj)
+
+							if form.instance.et_type in employee_types:
+								form.add_error('et_type',"Duplicate Entry")
+								validation_error_found = True
+							employee_types.append(form.instance.et_type)
+				else:
+					validation_error_found = True
+		else:
+			validation_error_found = True
+
+
+		# if no errors, file the edits
+		if not validation_error_found:
+
+			for obj in objects_to_delete:
+				obj.delete()
+
+			for obj in objects_to_save:
+				obj.save()
 
 			return HttpResponseRedirect(reverse(template_redirect))
 
@@ -206,11 +239,19 @@ def schedule_settings(request):
 
 	existing_requirement_day_times = RequirementDayTime.objects.filter(
 																		requirement_day_time_user = request.user,
-																		)
+																		).order_by(
+																					'day_of_week',
+																					'rqmt_day_employee_type',
+																					'rqmt_day_start_time',
+																					)
 
 	existing_requirement_date_times = RequirementDateTime.objects.filter(
 																			requirement_date_time_user = request.user,
-																			)
+																			).order_by(
+																						'rqmt_date_date',
+																						'rqmt_date_employee_type',
+																						'rqmt_date_time',
+																						)
 	try:
 		general_settings_instance = GeneralSetting.objects.get(
 																general_setting_user = request.user,
@@ -321,10 +362,29 @@ def schedule_settings(request):
 																			prefix='requirement_date_time',
 																			queryset = existing_requirement_date_times,
 																			)
+	
+	'''
+		Need to check formsets one by one since it gives you
+		[{},{},{}] for formsets with no errors
+	'''
+	requirement_day_time_errors = False
+	for form_errors in employee_requirement_daytime_formset.errors:
+		if len(form_errors) > 0:
+			requirement_day_time_errors = True
+			break;
+	
+	requirement_date_time_errors = False
+	for form_errors in employee_requirement_datetime_formset.errors:
+		if len(form_errors) > 0:
+			requirement_date_time_errors = True
+			break;
+
 	context = {
 				'GeneralSettingsForm': general_settings_form,
 				'RequirementDayTimeFormSet': employee_requirement_daytime_formset,
 				'RequirementDateTimeFormSet': employee_requirement_datetime_formset,
+				'RequirementDayTimeFormSetErrors': requirement_day_time_errors,
+				'RequirementDateTimeFormSetErrors': requirement_date_time_errors,
 				}
 
 	return render(request,template,context)
@@ -454,17 +514,29 @@ def create_new_employee(request):
 					objects_to_delete.append(form.instance)
 
 			# Save
+			employee_types = []
 			for form in employee_employeetype_formset:
 
-				if not form.is_valid():
+				if form.is_valid():
+
+					if form not in employee_employeetype_formset.deleted_forms:
+
+						if 'pet_employee_type' in form.cleaned_data.keys():
+							if form.cleaned_data['pet_employee_type']:
+
+								if form.has_changed():
+									obj = form.save(commit = False)
+									obj.pet_employee = employee
+									obj.person_employee_type_user = request.user
+									objects_to_save.append(obj)
+
+								if form.instance.pet_employee_type in employee_types:
+									form.add_error('pet_employee_type',"Duplicate Entry")
+									validation_error_found = True
+
+								employee_types.append(form.instance.pet_employee_type)
+				else:
 					validation_error_found = True
-					break
-				if (form not in employee_employeetype_formset.deleted_forms
-					and form.has_changed()):
-						obj = form.save(commit = False)
-						obj.pet_employee = employee
-						obj.person_employee_type_user = request.user
-						objects_to_save.append(obj)
 		else:
 			validation_error_found = True
 
@@ -519,7 +591,29 @@ def create_new_employee(request):
 		employee_employeetype_formset = EmployeeEmployeeTypeFormSet(
 																		prefix='employee_type',
 																		queryset = PersonEmployeeType.objects.none(),
-																		)
+																		)	
+
+	'''
+		Need to check formsets one by one since it gives you
+		[{},{},{}] for formsets with no errors
+	'''
+	request_day_time_errors = False
+	for form_errors in employee_request_daytime_formset.errors:
+		if len(form_errors) > 0:
+			request_day_time_errors = True
+			break;
+	
+	request_date_time_errors = False
+	for form_errors in employee_request_datetime_formset.errors:
+		if len(form_errors) > 0:
+			request_date_time_errors = True
+			break;
+	
+	employee_type_errors = False
+	for form_errors in employee_employeetype_formset.errors:
+		if len(form_errors) > 0:
+			employee_type_errors = True
+			break;
 
 
 	context = {
@@ -527,6 +621,9 @@ def create_new_employee(request):
 				'EmployeeRequestDayTimeFormSet': employee_request_daytime_formset,
 				'EmployeeRequestDateTimeFormSet': employee_request_datetime_formset,
 				'EmployeeEmployeeTypeFormSet': employee_employeetype_formset,
+				'EmployeeRequestDayTimeFormSetErrors': request_day_time_errors,
+				'EmployeeRequestDateTimeFormSetErrors': request_date_time_errors,
+				'EmployeeEmployeeTypeFormSetErrors': employee_type_errors,
 				}
 	return render(request,template,context)
 
@@ -570,7 +667,9 @@ def edit_employee(request,employee_id):
 	existing_employee_types = PersonEmployeeType.objects.filter(
 																person_employee_type_user = request.user,
 																pet_employee = employee,
-																)
+																).order_by(
+																			'pet_employee_type',
+																			)
 
 	# determine number of blank lines
 	if existing_request_daytimes:
@@ -702,25 +801,34 @@ def edit_employee(request,employee_id):
 					objects_to_delete.append(form.instance)
 
 			# Save
+			employee_types = []
 			for form in employee_employeetype_formset:
 
-				if not form.is_valid():
+				if form.is_valid():
+
+					if form not in employee_employeetype_formset.deleted_forms:
+
+						if 'pet_employee_type' in form.cleaned_data.keys():
+							if form.cleaned_data['pet_employee_type']:
+
+								if form.has_changed():
+									obj = form.save(commit = False)
+									obj.pet_employee = employee
+									obj.person_employee_type_user = request.user
+									objects_to_save.append(obj)
+
+								if form.instance.pet_employee_type in employee_types:
+									form.add_error('pet_employee_type',"Duplicate Entry")
+									validation_error_found = True
+
+								employee_types.append(form.instance.pet_employee_type)
+				else:
 					validation_error_found = True
-					break
-				if (form not in employee_employeetype_formset.deleted_forms
-					and form.has_changed()):
-						obj = form.save(commit = False)
-						obj.pet_employee = employee
-						obj.person_employee_type_user = request.user
-						#obj.save()
-						objects_to_save.append(obj)
 		else:
 			validation_error_found = True
 
 		# file objects if everything okay
-		if validation_error_found:
-			"nothing to do"
-		else:
+		if not validation_error_found:
 				
 			# delete all objects
 			for obj in objects_to_delete:
@@ -749,14 +857,40 @@ def edit_employee(request,employee_id):
 		employee_employeetype_formset = EmployeeEmployeeTypeFormSet(
 																		prefix='employee_type',
 																		queryset = existing_employee_types,
-																		)
+																		)	
+	'''
+		Need to check formsets one by one since it gives you
+		[{},{},{}] for formsets with no errors
+	'''
+	request_day_time_errors = False
+	for form_errors in employee_request_daytime_formset.errors:
+		if len(form_errors) > 0:
+			request_day_time_errors = True
+			break;
+	
+	request_date_time_errors = False
+	for form_errors in employee_request_datetime_formset.errors:
+		if len(form_errors) > 0:
+			request_date_time_errors = True
+			break;
+	
+	employee_type_errors = False
+	for form_errors in employee_employeetype_formset.errors:
+		if len(form_errors) > 0:
+			employee_type_errors = True
+			break;
+
 	context = {
 				'IdentifiedEmployee': employee,
 				'EmployeeInfoForm':employee_info_form,
 				'EmployeeRequestDayTimeFormSet': employee_request_daytime_formset,
 				'EmployeeRequestDateTimeFormSet': employee_request_datetime_formset,
 				'EmployeeEmployeeTypeFormSet': employee_employeetype_formset,
+				'EmployeeRequestDayTimeFormSetErrors': request_day_time_errors,
+				'EmployeeRequestDateTimeFormSetErrors': request_date_time_errors,
+				'EmployeeEmployeeTypeFormSetErrors': employee_type_errors,
 				}
+
 	return render(request,template,context)		
 
 @login_required

@@ -177,8 +177,6 @@ class EmployeeRequestDateTimeForm(forms.ModelForm):
 
 	helper = FormHelper()
 	helper.form_tag = False
-
-
 		
 	helper.layout = Layout(
 							Div(
@@ -239,8 +237,6 @@ def make_EmployeeEmployeeTypeForm(
 		helper = FormHelper()
 		helper.form_tag = False
 		#helper.form_show_labels = False
-
-
 		
 		helper.layout = Layout(
 								Div(
@@ -289,15 +285,21 @@ class EmployeeTypesForm(forms.ModelForm):
 	#helper.form_show_labels = False
 	helper.layout = Layout(
 							Div(
-								Field(
-										'et_type',
-										placeholder = 'Position',
+								Div(
+									Div(
+										Field(
+												'et_type',
+												placeholder = 'Position',
+												),
+										css_class = 'col-lg-10',
 										),
-								css_class = 'col-lg-10'
-								), 
-							Div(
-								'DELETE',
-								css_class = 'col-lg-2',
+									Div(
+										'DELETE',
+										css_class = 'col-lg-2',
+										),
+									css_class = "row",
+									),
+								css_class="dynamic-form",
 								),
 							)
 
@@ -307,7 +309,9 @@ class EmployeeTypesForm(forms.ModelForm):
 
 	class Meta:
 			model = EmployeeType
+			#fields = '__all__'
 			fields = ['et_type',]
+
 
 def make_RequirementDayTimeForm(
 								user,

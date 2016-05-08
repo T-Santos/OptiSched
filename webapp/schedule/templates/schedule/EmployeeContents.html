@@ -1,0 +1,102 @@
+{% load crispy_forms_tags %}
+
+<div class="panel-body">
+
+			<div class="panel-group">
+			  <div class="panel panel-default">
+			    <div class="panel-heading" data-toggle="collapse" href="#collapse1">
+			      <h4 class="panel-title">
+			        General Work Information
+			      </h4>
+			    </div>
+			    <div id="collapse1" class = {% if EmployeeInfoForm.errors %}
+			    						   		"panel-collapse collapse in"
+			    						   {% else %}
+			    						   		"panel-collapse collapse"
+			    						   	{% endif %}>
+			      <div class="panel-body">
+			      	<div class="row">
+				      	<div class="col-lg-4">
+							{{ EmployeeInfoForm|crispy }}
+						</div>
+					</div>
+	    		  </div>
+			    </div>
+			  </div>
+			</div>
+
+			<div class="panel-group">
+				 <div class="panel panel-default">
+				    <div class="panel-heading" data-toggle="collapse" href="#collapse2">
+				      <h4 class="panel-title">
+				        Typical Day Requests
+				      </h4>
+				    </div>
+				    <div id="collapse2" class = {% if EmployeeRequestDayTimeFormSetErrors %}
+			    						   		"panel-collapse collapse in"
+			    						   {% else %}
+			    						   		"panel-collapse collapse"
+			    						   	{% endif %}>
+				      <div class="panel-body" id = "request_day_time">
+
+				      	<!-- <div class="btn-group" role="group" aria-label="...">
+						  <button type="button" class="btn btn-default">Sunday</button>
+						  <button type="button" class="btn btn-default">Monday</button>
+						  <button type="button" class="btn btn-default">Tuesday</button>
+						  <button type="button" class="btn btn-default">Wednesday</button>
+						  <button type="button" class="btn btn-default">Thrusday</button>
+						  <button type="button" class="btn btn-default">Friday</button>
+						  <button type="button" class="btn btn-default">Saturday</button>
+						</div> -->
+ 						
+ 						{% crispy EmployeeRequestDayTimeFormSet EmployeeRequestDayTimeFormSet.form.helper %}
+						<input name="AddRequestDayTime" class="btn btn-primary" type="button" value="Add" id="add_rqst_day_time">
+		    		  </div>
+				    </div>
+				 </div>
+			</div>
+
+			<div class="panel-group">
+				 <div class="panel panel-default">
+				    <div class="panel-heading" data-toggle="collapse" href="#collapse3">
+				      <h4 class="panel-title">
+				        Specific Date Requests
+				      </h4>
+				    </div>
+				    <div id="collapse3" class = {% if EmployeeRequestDateTimeFormSetErrors %}
+			    						   		"panel-collapse collapse in"
+			    						   {% else %}
+			    						   		"panel-collapse collapse"
+			    						   	{% endif %}>
+				      <div class="panel-body" id = "request_date_time">
+ 						{% crispy EmployeeRequestDateTimeFormSet EmployeeRequestDateTimeFormSet.form.helper %}
+						<input name="AddRequestDateTime" class="btn btn-primary" type="button" value="Add" id="add_rqst_date_time">
+		    		  </div>
+				    </div>
+				 </div>
+			</div>
+
+			<div class="panel-group">
+				 <div class="panel panel-default">
+				    <div class="panel-heading" data-toggle="collapse" href="#collapse4">
+				      <h4 class="panel-title">
+				        Positions
+				      </h4>
+				    </div>
+				    <div id="collapse4" class = {% if EmployeeEmployeeTypeFormSetErrors %}
+			    						   		"panel-collapse collapse in"
+			    						   {% else %}
+			    						   		"panel-collapse collapse"
+			    						   	{% endif %}>
+						<div class="panel-body" id = "employee_type">
+				    		<div class="col-lg-6">
+		 						{% crispy EmployeeEmployeeTypeFormSet EmployeeEmployeeTypeFormSet.form.helper %}
+							<input name="AddEmployeeType" class="btn btn-primary" type="button" value="Add" id="add_employee_type">
+				    		</div>
+				    	</div>
+			    		<div class='col-lg-6'></div>
+				    </div>
+				 </div>
+			</div>
+
+		</div>

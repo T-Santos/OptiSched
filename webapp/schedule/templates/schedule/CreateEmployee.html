@@ -6,6 +6,7 @@
 {% block head_title %}Create Employee | {{ block.super }} {% endblock %}
 
 {% block content %}
+{% include 'datetime_js.html' %}
 {% include 'dynamic-formset_js.html' %}
 
 	<script type="text/javascript">
@@ -43,87 +44,7 @@
 	<form name="EmployeeData" action="." method="POST">
 		{% csrf_token %}
 
-		<div class="panel-body">
-
-			<div class="panel-group">
-			  <div class="panel panel-default">
-			    <div class="panel-heading">
-			      <h4 class="panel-title">
-			        <a data-toggle="collapse" href="#collapse1">General Work Information</a>
-			      </h4>
-			    </div>
-			    <div id="collapse1" class ="panel-collapse collapse in">
-			      <div class="panel-body">
-					{{ EmployeeInfoForm|crispy }}
-	    		  </div>
-			    </div>
-			  </div>
-			</div>
-
-			<div class="panel-group">
-				 <div class="panel panel-default">
-				    <div class="panel-heading">
-				      <h4 class="panel-title">
-				        <a data-toggle="collapse" href="#collapse2">Typical Day Requests</a>
-				      </h4>
-				    </div>
-				    <div id="collapse2" class = {% if EmployeeRequestDayTimeFormSet.errors %}
-			    						   		"panel-collapse collapse in"
-			    						   {% else %}
-			    						   		"panel-collapse collapse"
-			    						   	{% endif %}>
-				      <div class="panel-body" id = "request_day_time">
- 						{% crispy EmployeeRequestDayTimeFormSet EmployeeRequestDayTimeFormSet.form.helper %}
-						<input name="AddRequestDayTime" class="btn btn-primary" type="button" value="Add" id="add_rqst_day_time">
-		    		  </div>
-				    </div>
-				 </div>
-			</div>
-
-			<div class="panel-group">
-				 <div class="panel panel-default">
-				    <div class="panel-heading">
-				      <h4 class="panel-title">
-				        <a data-toggle="collapse" href="#collapse3">Specific Date Requests</a>
-				      </h4>
-				    </div>
-				    <div id="collapse3" class = {% if EmployeeRequestDateTimeFormSet.errors %}
-			    						   		"panel-collapse collapse in"
-			    						   {% else %}
-			    						   		"panel-collapse collapse"
-			    						   	{% endif %}>
-				      <div class="panel-body" id = "request_date_time">
- 						{% crispy EmployeeRequestDateTimeFormSet EmployeeRequestDateTimeFormSet.form.helper %}
-						<input name="AddRequestDateTime" class="btn btn-primary" type="button" value="Add" id="add_rqst_date_time">
-		    		  </div>
-				    </div>
-				 </div>
-			</div>
-
-			<div class="panel-group">
-				 <div class="panel panel-default">
-				    <div class="panel-heading">
-				      <h4 class="panel-title">
-				        <a data-toggle="collapse" href="#collapse4">Positions</a>
-				      </h4>
-				    </div>
-				    <div id="collapse4" class = {% if EmployeeEmployeeTypeFormSet.errors %}
-			    						   		"panel-collapse collapse in"
-			    						   {% else %}
-			    						   		"panel-collapse collapse"
-			    						   	{% endif %}>
-						<div class="panel-body" id = "employee_type">
-				    		<div class="col-lg-6">
-		 						{% crispy EmployeeEmployeeTypeFormSet EmployeeEmployeeTypeFormSet.form.helper %}
-							<input name="AddEmployeeType" class="btn btn-primary" type="button" value="Add" id="add_employee_type">
-				    		</div>
-				    	</div>
-			    		<div class='col-lg-6'></div>
-				    </div>
-				 </div>
-			</div>
-
-		</div>
+		{% include 'EmployeeContents.html' %}
 
         <input name="SaveAndDash" class="btn btn-success" type="submit" value="Create Employee and Return to Dashboard">
         <input name="SaveAndAnother" class="btn btn-success" type="submit" value="Create Employee and Add Another">

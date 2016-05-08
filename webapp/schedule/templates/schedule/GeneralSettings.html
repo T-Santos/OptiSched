@@ -5,18 +5,35 @@
 {% block head_title %}General Settings | {{ block.super }} {% endblock %}
 
 {% block content %}
+{% include 'dynamic-formset_js.html' %}
+
+  <script type="text/javascript">
+    <!--
+    $(function () {
+
+        $('#add_employee_type').click(function() {
+          return addForm(this, 'employee_type');
+        });
+
+        $('.delete-row').click(function() {
+          return deleteForm(this, 'employee_type');
+        });
+    })
+    //-->
+    </script>
 	<h2> Edit General Settings </h2>
 
   <form name="EmployeeTypeFormSet" action="." method="POST">
     {% csrf_token %}
 
 
-    <div class="panel-body">
+    <div class="panel-body " id="employee_type">
 
       <div class="panel-group">
           <h3> Employee Types </h3>
         <div class='col-lg-6'>
           {% crispy EmployeeTypeFormSet EmployeeTypeFormSet.form.helper %}
+            <input name="AddEmployeeType" class="btn btn-primary" type="button" value="Add" id="add_employee_type">
         </div>
         <div class='col-lg-6'></div>
       </div>
