@@ -70,11 +70,17 @@ def dashboard(request):
 	any_employee_types = EmployeeType.objects.filter(
 														employee_type_user = request.user,
 														)
+	
 	any_person_employee_types = PersonEmployeeType.objects.filter(
 																	person_employee_type_user = request.user,
 																	)
 
-	any_schedule_criteria = RequirementDayTime.objects.filter(
+	any_schedule_criteria = RequirementTime.objects.filter(
+															rqmt_time_user = request.user,
+															)
+
+	if not any_schedule_criteria:
+		any_schedule_criteria = RequirementDayTime.objects.filter(
 																requirement_day_time_user = request.user,
 																)
 	if not any_schedule_criteria:
@@ -237,6 +243,13 @@ def schedule_settings(request):
 	template_redirect = 'OptiSched:dashboard'
 	template = 'ScheduleSettings.html'
 
+	existing_requirement_times = RequirementTime.objects.filter(
+																rqmt_time_user = request.user,
+																).order_by(
+																			'rqmt_employee_type',
+																			'rqmt_start_time',
+																			)
+
 	existing_requirement_day_times = RequirementDayTime.objects.filter(
 																		requirement_day_time_user = request.user,
 																		).order_by(
@@ -264,6 +277,11 @@ def schedule_settings(request):
 		general_settings_instance = False
 		general_settings_form = GeneralScheduleSettingsForm()
 
+	if existing_requirement_times:
+		requirement_times_blank_lines = 1
+	else:
+		requirement_times_blank_lines = 5
+
 	if existing_requirement_day_times:
 		requirement_daytimes_blank_lines = 1
 	else:
@@ -273,6 +291,11 @@ def schedule_settings(request):
 		requirement_datetimes_blank_lines = 1
 	else:
 		requirement_datetimes_blank_lines = 5
+
+	RequirementTimeFormSet = make_RequirementTimeForm(
+														request.user,
+														requirement_times_blank_lines,
+														)
 
 	RequirementDayTimeFormSet = make_RequirementDayTimeForm(
 																	request.user,
@@ -296,6 +319,12 @@ def schedule_settings(request):
 																request.POST,
 																)
 
+		employee_requirement_time_formset = RequirementTimeFormSet(
+																	request.POST,
+																	request.FILES,
+																	prefix='requirement_time',
+																	)
+
 		employee_requirement_daytime_formset = RequirementDayTimeFormSet(
 																			request.POST,
 																			request.FILES,
@@ -307,6 +336,8 @@ def schedule_settings(request):
 																			request.FILES,
 																			prefix='requirement_date_time',
 																			)
+		# TODO: Do not want to have these cascaded. We want them to
+		# be reported all at once
 		if general_settings_form.is_valid():
 			obj = general_settings_form.save(commit = False)
 			obj.general_setting_user = request.user
@@ -349,9 +380,32 @@ def schedule_settings(request):
 								obj.requirement_date_time_user = request.user
 								obj.save()
 
-					return HttpResponseRedirect(reverse(template_redirect))
+					# Request Date times
+					if employee_requirement_time_formset.is_valid():
+
+						# Delete
+						for form in employee_requirement_time_formset.deleted_forms:
+							if form.instance.pk:
+								form.instance.delete()
+
+						# Save
+						for form in employee_requirement_time_formset:
+
+							if (form.is_valid() 
+								and form not in employee_requirement_time_formset.deleted_forms
+								and form.has_changed()):
+									obj = form.save(commit = False)
+									obj.rqmt_time_user = request.user
+									obj.save()
+
+						return HttpResponseRedirect(reverse(template_redirect))
 
 	else:
+
+		employee_requirement_time_formset = RequirementTimeFormSet(
+																	prefix='requirement_time',
+																	queryset = existing_requirement_times,
+																	)
 
 		employee_requirement_daytime_formset = RequirementDayTimeFormSet(
 																			prefix='requirement_day_time',
@@ -367,6 +421,12 @@ def schedule_settings(request):
 		Need to check formsets one by one since it gives you
 		[{},{},{}] for formsets with no errors
 	'''
+	requirement_time_errors = False
+	for form_errors in employee_requirement_time_formset.errors:
+		if len(form_errors) > 0:
+			requirement_time_errors = True
+			break;
+
 	requirement_day_time_errors = False
 	for form_errors in employee_requirement_daytime_formset.errors:
 		if len(form_errors) > 0:
@@ -381,8 +441,10 @@ def schedule_settings(request):
 
 	context = {
 				'GeneralSettingsForm': general_settings_form,
+				'RequirementTimeFormSet': employee_requirement_time_formset,
 				'RequirementDayTimeFormSet': employee_requirement_daytime_formset,
 				'RequirementDateTimeFormSet': employee_requirement_datetime_formset,
+				'RequirementTimeFormSetErrors': requirement_time_errors,
 				'RequirementDayTimeFormSetErrors': requirement_day_time_errors,
 				'RequirementDateTimeFormSetErrors': requirement_date_time_errors,
 				}

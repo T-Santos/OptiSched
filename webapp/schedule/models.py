@@ -247,7 +247,7 @@ class Date(models.Model):
 									)
 
 	date = models.DateField(
-							primary_key=True,
+			        		primary_key = True,
 			        		default=datetime.date.today,
 			        		verbose_name="Date",
 			        		)
@@ -261,6 +261,14 @@ class Date(models.Model):
 									"Day End Time",
 				       				 default = datetime.time(23,0,0),
 				       				 )
+
+	class Meta:
+		unique_together = (
+							(
+								"date_user",
+								"date",
+								),
+							)
 
 	def get_absolute_url(self):
 		#"http://localhost:8000/OptiSched/ViewManagerDay/?navdate=2016-02-14"
@@ -320,7 +328,9 @@ class EmployeeTypeShiftError(models.Model):
 														verbose_name="User",
 														)
 	# Employee Type if found an error having to do with employee types
-	error_emp_type = models.ForeignKey('EmployeeType')
+	error_emp_type = models.ForeignKey(
+										'EmployeeType'
+										)
 
 	# date for notification
 	error_date = models.ForeignKey(
@@ -335,6 +345,16 @@ class EmployeeTypeShiftError(models.Model):
 	error_end_time = models.TimeField(
 											"Error End Time"
 											)
+
+	class Meta:
+		unique_together = (
+							(
+								"employee_type_shift_error_user",
+								"error_emp_type",
+								"error_date",
+								"error_start_time",
+								),
+							)
 
 	def error_display_time(self):
 		return self.error_time.strftime('%I:%M %p')
@@ -411,7 +431,14 @@ class RequestDayTime(models.Model):
 
 	class Meta:
 		# index_together? https://docs.djangoproject.com/en/1.9/ref/models/options/#index-together
-		unique_together = (("day_of_week","rqst_day_start_time","rqst_day_type"),)
+		unique_together = (
+							(
+								"request_day_time_user",
+								"rqst_day_employee",
+								"day_of_week",
+								"rqst_day_type",
+								),
+							)
 
 	# Members
 	def __str__(self):
@@ -466,6 +493,17 @@ class RequestDateTime(models.Model):
     									verbose_name="Request Type",
     									)
 
+	class Meta:
+		# index_together? https://docs.djangoproject.com/en/1.9/ref/models/options/#index-together
+		unique_together = (
+							(
+								"request_date_time_user",
+								"rqst_date_employee",
+								"rqst_date_date",
+								"rqst_date_type",
+								),
+							)
+
 	# Members
 	def displayRequestDateSpan(self):
 		return str(self.rqst_date_date) + ' ' + str(self.rqst_date_start_time) + ' - ' + str(self.rqst_date_end_time)
@@ -498,46 +536,43 @@ class EmployeeType(models.Model):
 	def __str__(self):
 		return str(self.et_type)
 
-class RequirementDateTime(models.Model):
+class RequirementTime(models.Model):
 
-	requirement_date_time_user = models.ForeignKey(
-													User,
-													verbose_name="User",
-													)
-
-	rqmt_date_employee_type = models.ForeignKey(
-													EmployeeType,
-													verbose_name="Position",
-													)
-
-	# Date
-	rqmt_date_date = models.DateField(
-										"Effective Date",
+	rqmt_time_user = models.ForeignKey(
+										User,
+										verbose_name="User",
 										)
-	
-	# Time
-	rqmt_date_time = models.TimeField(
+
+	# Time the req should take effect
+	rqmt_start_time = models.TimeField(
 										"Effective Time",
-										)
+			          					#default = datetime.time(0,0,0),
+			          					)
 
 	# Requirement
-	rqmt_date_employee_count = models.PositiveIntegerField(
-															"Count",
-															)
+	rqmt_employee_type = models.ForeignKey(
+											EmployeeType,
+											verbose_name="Employee",
+											)
+
+	# Count
+	rqmt_employee_count = models.PositiveIntegerField(
+														verbose_name="Count",
+														)
 
 	class Meta:
 		unique_together = (
 							(
-								"rqmt_date_date",
-								"rqmt_date_time",
-								"rqmt_date_employee_type",
-								"rqmt_date_employee_count",
+								"rqmt_time_user",
+								"rqmt_start_time",
+								"rqmt_employee_type",
+								"rqmt_employee_count",
 								),
 							)
 
 	# Members
 	def __str__(self):
-		return str(self.rqmt_date_date.strftime("%Y-%m-%d")) + " " + str(self.rqmt_date_time.strftime("%H:%M")) + " " +  str(self.rqmt_date_employee_type) + " " +  str(self.rqmt_date_employee_count)
+		return str(self.rqmt_start_time.strftime("%H:%M")) + " " + str(self.rqmt_employee_type) + " " +  str(self.rqmt_employee_count)
 
 class RequirementDayTime(models.Model):
 
@@ -582,6 +617,7 @@ class RequirementDayTime(models.Model):
 	class Meta:
 		unique_together = (
 							(
+								"requirement_day_time_user",
 								"day_of_week",
 								"rqmt_day_start_time",
 								"rqmt_day_employee_type",
@@ -592,6 +628,48 @@ class RequirementDayTime(models.Model):
 	# Members
 	def __str__(self):
 		return str(self.get_day_of_week_display()) + ' ' + str(self.rqmt_day_start_time.strftime("%H:%M")) + " " + str(self.rqmt_day_employee_type) + " " +  str(self.rqmt_day_employee_count)
+
+class RequirementDateTime(models.Model):
+
+	requirement_date_time_user = models.ForeignKey(
+													User,
+													verbose_name="User",
+													)
+
+	rqmt_date_employee_type = models.ForeignKey(
+													EmployeeType,
+													verbose_name="Position",
+													)
+
+	# Date
+	rqmt_date_date = models.DateField(
+										"Effective Date",
+										)
+	
+	# Time
+	rqmt_date_time = models.TimeField(
+										"Effective Time",
+										)
+
+	# Requirement
+	rqmt_date_employee_count = models.PositiveIntegerField(
+															"Count",
+															)
+
+	class Meta:
+		unique_together = (
+							(
+								"requirement_date_time_user",
+								"rqmt_date_date",
+								"rqmt_date_time",
+								"rqmt_date_employee_type",
+								"rqmt_date_employee_count",
+								),
+							)
+
+	# Members
+	def __str__(self):
+		return str(self.rqmt_date_date.strftime("%Y-%m-%d")) + " " + str(self.rqmt_date_time.strftime("%H:%M")) + " " +  str(self.rqmt_date_employee_type) + " " +  str(self.rqmt_date_employee_count)
 
 
 

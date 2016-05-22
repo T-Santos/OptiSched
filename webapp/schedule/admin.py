@@ -39,6 +39,7 @@ admin.site.register(Person,PersonAdmin)
 admin.site.register(EmployeeType)
 admin.site.register(PersonEmployeeType)
 
+admin.site.register(RequirementTime)
 admin.site.register(RequirementDayTime)
 admin.site.register(RequirementDateTime)
 

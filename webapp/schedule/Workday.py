@@ -464,7 +464,7 @@ class CreateDay(object):
 
         # given the current date and time see if there are any
         # override specific datetime requirements
-        emp_req_ovrs = RequirementDateTime.objects.filter(
+        emp_date_reqs = RequirementDateTime.objects.filter(
                                                             requirement_date_time_user = self.user,
                                                             rqmt_date_date__gte = begin_of_day.date(),
                                                             rqmt_date_date__lte = now.date(),
@@ -477,13 +477,22 @@ class CreateDay(object):
 
         # if there are no employee requirement overrides, check for requirements for the 
         # given day of the week and time
-        if (not emp_req_ovrs):
-            emp_reqs = RequirementDayTime.objects.filter(
-                                                            requirement_day_time_user = self.user,
-                                                            day_of_week = self.date_model_obj.date.weekday(),
-                                                            rqmt_day_start_time__lte = now.time()
-                                                            ).order_by(
-                                                                        '-rqmt_day_start_time')
+        if (not emp_date_reqs):
+            emp_day_reqs = RequirementDayTime.objects.filter(
+                                                                requirement_day_time_user = self.user,
+                                                                day_of_week = self.date_model_obj.date.weekday(),
+                                                                rqmt_day_start_time__lte = now.time()
+                                                                ).order_by(
+                                                                            '-rqmt_day_start_time')
+
+        if (not emp_date_reqs and
+            not emp_day_reqs):
+            emp_reqs = RequirementTime.objects.filter(
+                                                        rqmt_time_user = self.user,
+                                                        rqmt_start_time__lte = now.time()
+                                                        ).order_by(
+                                                                    '-rqmt_start_time')
+
 
         # Make a map/dictionary of employee type reqirements and types needed checking
         '''
@@ -493,22 +502,30 @@ class CreateDay(object):
         employee_type_requirements = {}
             
         # Divvy the requirements out by employee type
-        if emp_req_ovrs:
-            for emp_req_ovr in emp_req_ovrs:
+        if emp_date_reqs:
+            for emp_req_ovr in emp_date_reqs:
                     if emp_req_ovr.rqmt_date_employee_type.et_type in employee_type_requirements:
                         # append the new number to the existing array at this slot
                         employee_type_requirements[emp_req_ovr.rqmt_date_employee_type.et_type].append(emp_req_ovr.rqmt_date_employee_count)
                     else:
                         # create a new array in this slot
                         employee_type_requirements[emp_req_ovr.rqmt_date_requirement.et_type] = [emp_req_ovr.rqmt_date_employee_count]
-        elif emp_reqs:
-            for emp_req in emp_reqs:
+        elif emp_day_reqs:
+            for emp_req in emp_day_reqs:
                     if emp_req.rqmt_day_employee_type.et_type in employee_type_requirements:
                         # append the new number to the existing array at this slot
                         employee_type_requirements[emp_req.rqmt_day_employee_type.et_type].append(emp_req.rqmt_day_employee_count)
                     else:
                         # create a new array in this slot
                         employee_type_requirements[emp_req.rqmt_day_employee_type.et_type] = [emp_req.rqmt_day_employee_count]
+        elif emp_reqs:
+            for emp_req in emp_reqs:
+                    if emp_req.rqmt_employee_type.et_type in employee_type_requirements:
+                        # append the new number to the existing array at this slot
+                        employee_type_requirements[emp_req.rqmt_employee_type.et_type].append(emp_req.rqmt_employee_count)
+                    else:
+                        # create a new array in this slot
+                        employee_type_requirements[emp_req.rqmt_employee_type.et_type] = [emp_req.rqmt_employee_count]
 
 
         return employee_type_requirements
@@ -656,11 +673,13 @@ class CreateDay(object):
             week_dates = namedtuple('week_dates', ['start_date','end_date'])
             week_dates = ScheduleDateTimeUtilities.get_dates_from_week(int(year_num),int(week_num))
 
+            #pdb.set_trace()
             temp_emp_existing_shifts_in_week = Shift.objects.filter(
                                                                     shift_user = self.user,
                                                                     shift_date__gte = week_dates[0],
                                                                     shift_date__lte = week_dates[1],
-                                                                    employee = available_employee.id)
+                                                                    employee = available_employee.id,
+                                                                    )
             hours_worked_in_week = 0
             for existing_shift in temp_emp_existing_shifts_in_week:
                 hours_worked_in_week += existing_shift.hours()

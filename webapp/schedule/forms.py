@@ -312,6 +312,70 @@ class EmployeeTypesForm(forms.ModelForm):
 			#fields = '__all__'
 			fields = ['et_type',]
 
+def make_RequirementTimeForm(
+								user,
+								extra,
+								):
+	class RequirementTimeForm(forms.ModelForm):
+
+		helper = FormHelper()
+		helper.form_tag = False
+		helper.layout = Layout(
+								Div(
+									Div(
+										Div(
+											Field(
+													'rqmt_start_time',
+													css_class = 'time',
+													),
+											css_class = 'col-lg-3',
+											),
+										Div(
+											Field(
+													'rqmt_employee_count',
+													),
+											css_class = 'col-lg-3',
+											), 
+										Div(
+											Field(
+													'rqmt_employee_type',
+													),
+											css_class = 'col-lg-3',
+											),
+										Div(
+											'DELETE',
+											css_class = 'col-lg-3',
+											style = 'padding-top: 20px'
+											),
+										css_class = "row",
+										),
+									css_class="dynamic-form",
+									),
+								)
+		
+		class Meta:
+				model = RequirementTime
+				fields = [
+							'rqmt_start_time',
+							'rqmt_employee_type',
+							'rqmt_employee_count',
+						]
+
+		def __init__(self, *args, **kwargs):
+			super(RequirementTimeForm, self).__init__(*args, **kwargs)
+			self.fields['rqmt_start_time'].label = 'Effective'
+			self.fields['rqmt_employee_type'].label = 'Position'
+			self.fields['rqmt_employee_type'].queryset = EmployeeType.objects.filter(
+																						employee_type_user = user,
+																						)
+			self.fields['rqmt_employee_count'].label = 'Count'
+
+	return forms.modelformset_factory(
+										RequirementTime,
+										form = RequirementTimeForm,
+										extra = extra,
+										can_delete = True,
+										)
 
 def make_RequirementDayTimeForm(
 								user,
